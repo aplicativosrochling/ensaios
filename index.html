@@ -15,29 +15,16 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
         // ═══════════════════════════════════════════════════════════
-        // 🔧 CONFIGURAÇÃO DO FIREBASE - SUBSTITUA PELOS SEUS DADOS 🔧
+        // 🔧 CONFIGURAÇÃO DO FIREBASE - SUAS CREDENCIAIS 🔧
         // ═══════════════════════════════════════════════════════════
-        // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyB_OvLi3SSBML2QpeXhl7oRp3NYnv7GaGo",
-  authDomain: "ensaios-268ab.firebaseapp.com",
-  projectId: "ensaios-268ab",
-  storageBucket: "ensaios-268ab.firebasestorage.app",
-  messagingSenderId: "913331032135",
-  appId: "1:913331032135:web:f4a17ebc6bf141b59be162"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-        // ═══════════════════════════════════════════════════════════
-        // ⚠️ ATENÇÃO: Substitua os valores acima pelos seus dados do Firebase!
-        // Acesse: console.firebase.google.com → Configurações do Projeto → Seus apps
-        // ═══════════════════════════════════════════════════════════
+        const firebaseConfig = {
+            apiKey: "AIzaSyB_OvLi3SSBML2QpeXhl7oRp3NYnv7GaGo",
+            authDomain: "ensaios-268ab.firebaseapp.com",
+            projectId: "ensaios-268ab",
+            storageBucket: "ensaios-268ab.firebasestorage.app",
+            messagingSenderId: "913331032135",
+            appId: "1:913331032135:web:f4a17ebc6bf141b59be162"
+        };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -1019,7 +1006,7 @@ function renderProducts() {
             <td class="mono">${p.spec} ${p.unit||''}</td>
             <td><div class="table-actions"><button class="action-btn" onclick="editProduct('${p.id}')">✏️</button><button class="action-btn del" onclick="deleteProduct('${p.id}')">🗑️</button></div></td>
         </tr>`).join('')
-    : '<tr><td colspan="6"><div class="empty-state"><p>Nenhum produto encontrado</p></div></td></tr>';
+    : '<tr><td colspan="6"><div class="empty-state"><p>Nenhum produto encontrado</p></div><tr></tr>';
 }
 
 // ────────────────────────────────────────────────────────────
@@ -1049,7 +1036,7 @@ function renderTests() {
             <td><div class="table-actions"><button class="action-btn" onclick="editTest('${t.id}')">✏️</button><button class="action-btn del" onclick="deleteTest('${t.id}')">🗑️</button></div></td>
         </tr>`;
     }).join('')
-    : '<tr><td colspan="11"><div class="empty-state"><p>Nenhum ensaio encontrado</p></div></td></tr>';
+    : '<tr><td colspan="11"><div class="empty-state"><p>Nenhum ensaio encontrado</p></div><tr></tr>';
 }
 
 // ────────────────────────────────────────────────────────────
@@ -1336,15 +1323,15 @@ function executePrint() {
 
     if (checked.has('rejected')) {
         const rejList = [...byProduct.entries()].filter(([,d]) => d.r > 0).sort((a,b) => b[1].r - a[1].r);
-        html += `<div class="section"><h2>⚠️ Produtos com Mais Reprovações</h2><table><thead><tr><th>PN</th><th>Descrição</th><th>Aprovados</th><th>Reprovados</th><th>Total</th><th>Taxa Falha</th></tr></thead><tbody>${rejList.map(([pn,d])=>`<tr><td><b>${pn}</b></td><td>${d.desc}</td><td style="color:#0ea573;">${d.a}</td><td style="color:#dc2626;">${d.r}</td><td>${d.a+d.r}</td><td><span class="badge badge-err">${Math.round(d.r/(d.a+d.r)*100)}%</span></td></tr>`).join('')}</tbody></table></div>`;
+        html += `<div class="section"><h2>⚠️ Produtos com Mais Reprovações</h2><tr><thead><tr><th>PN</th><th>Descrição</th><th>Aprovados</th><th>Reprovados</th><th>Total</th><th>Taxa Falha</th></tr></thead><tbody>${rejList.map(([pn,d])=>`<tr><td><b>${pn}</b></td><td>${d.desc}</td><td style="color:#0ea573;">${d.a}</td><td style="color:#dc2626;">${d.r}</<td style="color:#dc2626;">${d.r}</td><td>${d.a+d.r}</td><td><span class="badge badge-err">${Math.round(d.r/(d.a+d.r)*100)}%</span></td></tr>`).join('')}</tbody></table></div>`;
     }
 
     if (checked.has('byProduct')) {
         const sorted = [...byProduct.entries()].sort((a,b) => (b[1].a+b[1].r)-(a[1].a+a[1].r));
-        html += `<div class="section"><h2>Resumo por Produto (PN)</h2><table><thead><tr><th>PN</th><th>Descrição</th><th>Aprovados</th><th>Reprovados</th><th>Total</th><th>% Aprovação</th></tr></thead><tbody>${sorted.map(([pn,d])=>`<td><td><b>${pn}</b></td><td>${d.desc}</td><td>${d.a}</td><td>${d.r}</td><td>${d.a+d.r}</td><td><span class="badge ${d.r===0?'badge-ok':'badge-err'}">${Math.round(d.a/(d.a+d.r)*100)}%</span></td></tr>`).join('')}</tbody></table></div>`;
+        html += `<div class="section"><h2>Resumo por Produto (PN)</h2><table><thead><tr><th>PN</th><th>Descrição</th><th>Aprovados</th><th>Reprovados</th><th>Total</th><th>% Aprovação</th></tr></thead><tbody>${sorted.map(([pn,d])=>`<tr><td><b>${pn}</b></td><td>${d.desc}</td><td>${d.a}</td><td>${d.r}</td><td>${d.a+d.r}</td><td><span class="badge ${d.r===0?'badge-ok':'badge-err'}">${Math.round(d.a/(d.a+d.r)*100)}%</span></td></tr>`).join('')}</tbody></table></div>`;
     }
 
-    if (checked.has('byType')) html += `<div class="section"><h2>Resumo por Tipo de Ensaio</h2><tr><thead><tr><th>Tipo de Ensaio</th><th>Quantidade</th><th>% do Total</th></tr></thead><tbody>${[...byType.entries()].sort((a,b)=>b[1]-a[1]).map(([type,count])=>`<tr><td><b>${type}</b></td><td>${count}</td><td>${total?Math.round(count/total*100):0}%</td></tr>`).join('')}</tbody></table></div>`;
+    if (checked.has('byType')) html += `<div class="section"><h2>Resumo por Tipo de Ensaio</h2><table><thead><tr><th>Tipo de Ensaio</th><th>Quantidade</th><th>% do Total</th></tr></thead><tbody>${[...byType.entries()].sort((a,b)=>b[1]-a[1]).map(([type,count])=>`<tr><td><b>${type}</b></td><td>${count}</td><td>${total?Math.round(count/total*100):0}%</td></tr>`).join('')}</tbody></table></div>`;
 
     if (checked.has('allTests')) {
         const sorted = [...f].sort((a,b) => new Date(b.date) - new Date(a.date));
