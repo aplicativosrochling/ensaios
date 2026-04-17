@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Röchling — Ensaios</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/date-fns/2.30.0/date_fns.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f5f3;
+    --surface: #ffffff;
+    --surface2: #f1efea;
+    --border: rgba(0,0,0,0.12);
+    --border2: rgba(0,0,0,0.22);
+    --text: #1a1a18;
+    --text2: #5f5e5a;
+    --text3: #888780;
+    --primary: #534ab7;
+    --primary-bg: #eeedfe;
+    --success: #0f6e56;
+    --success-bg: #e1f5ee;
+    --danger: #a32d2d;
+    --danger-bg: #fcebeb;
+    --warning: #854f0b;
+    --warning-bg: #faeeda;
+    --info: #185fa5;
+    --info-bg: #e6f1fb;
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a;
+      --surface: #2c2c2a;
+      --surface2: #222220;
+      --border: rgba(255,255,255,0.12);
+      --border2: rgba(255,255,255,0.22);
+      --text: #f1efe8;
+      --text2: #b4b2a9;
+      --text3: #888780;
+      --primary: #afa9ec;
+      --primary-bg: #26215c;
+      --success: #9fe1cb;
+      --success-bg: #04342c;
+      --danger: #f09595;
+      --danger-bg: #501313;
+      --warning: #fac775;
+      --warning-bg: #412402;
+      --info: #85b7eb;
+      --info-bg: #042c53;
+    }
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 24px 16px;
+  }
+
+  .container { max-width: 1200px; margin: 0 auto; }
+
+  /* Header */
+  .header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo { width: 40px; height: 40px; border-radius: var(--radius); background: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; color: #fff; flex-shrink: 0; }
+  .header h1 { font-size: 20px; font-weight: 500; line-height: 1.2; }
+  .header-sub { font-size: 12px; color: var(--text2); margin-top: 2px; display: flex; align-items: center; gap: 6px; }
+  .dot-live { width: 7px; height: 7px; border-radius: 50%; background: var(--success); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  .badge-live { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 500; color: var(--success); border: 0.5px solid var(--success); background: var(--success-bg); padding: 4px 10px; border-radius: 999px; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: var(--surface); color: var(--text); font-size: 13px; cursor: pointer; transition: background .15s; }
+  .btn:hover { background: var(--surface2); }
+  .btn:disabled { opacity: .45; cursor: default; }
+  .header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+  /* Card */
+  .card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 20px; }
+  .card-title { font-size: 14px; font-weight: 500; }
+  .card-sub { font-size: 12px; color: var(--text2); margin-top: 2px; margin-bottom: 16px; }
+
+  /* Filters */
+  .filters-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-top: 12px; }
+  .filter-group label { display: block; font-size: 11px; color: var(--text2); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .04em; }
+  select { width: 100%; padding: 7px 10px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: var(--surface2); color: var(--text); font-size: 13px; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; }
+  .filters-header { display: flex; align-items: center; gap: 8px; }
+  .badge-active { font-size: 11px; background: var(--primary-bg); color: var(--primary); padding: 2px 8px; border-radius: 999px; }
+  .btn-sm { padding: 4px 10px; font-size: 12px; margin-left: auto; }
+
+  /* KPIs */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .kpi-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 16px; display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .kpi-label { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: .04em; }
+  .kpi-value { font-size: 24px; font-weight: 500; margin-top: 4px; }
+  .kpi-icon { width: 36px; height: 36px; border-radius: var(--radius); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px; }
+  .icon-primary { background: var(--primary-bg); color: var(--primary); }
+  .icon-success { background: var(--success-bg); color: var(--success); }
+  .icon-danger  { background: var(--danger-bg);  color: var(--danger); }
+  .icon-info    { background: var(--info-bg);    color: var(--info); }
+  .icon-warning { background: var(--warning-bg); color: var(--warning); }
+
+  /* Charts grid */
+  .grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
+  .grid-1-1 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 768px) { .grid-2-1, .grid-1-1 { grid-template-columns: 1fr; } }
+
+  .space-y > * + * { margin-top: 16px; }
+
+  /* Gauge */
+  .gauge-wrap { position: relative; width: 100%; height: 180px; }
+  .gauge-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+  .gauge-pct { font-size: 32px; font-weight: 500; }
+  .gauge-label { font-size: 11px; color: var(--text2); }
+  .gauge-stats { display: flex; justify-content: space-around; text-align: center; margin-top: 8px; }
+  .gauge-stat-val { font-size: 18px; font-weight: 500; }
+  .gauge-stat-lbl { font-size: 11px; color: var(--text2); }
+
+  /* Progress bars */
+  .prog-item { margin-bottom: 12px; }
+  .prog-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; margin-bottom: 4px; }
+  .prog-pn { font-family: monospace; font-weight: 500; }
+  .prog-meta { color: var(--text2); display: flex; align-items: center; gap: 6px; }
+  .badge-danger { background: var(--danger-bg); color: var(--danger); font-size: 11px; padding: 2px 7px; border-radius: 999px; }
+  .prog-track { height: 6px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--danger); border-radius: 99px; transition: width .5s ease; }
+
+  /* Recent table */
+  .recent-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 0.5px solid var(--border); }
+  .recent-item:last-child { border-bottom: none; }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; color: #fff; flex-shrink: 0; }
+  .recent-info { flex: 1; min-width: 0; }
+  .recent-pn { font-family: monospace; font-size: 13px; font-weight: 500; }
+  .recent-meta { font-size: 11px; color: var(--text2); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .recent-right { text-align: right; flex-shrink: 0; }
+  .recent-result { font-family: monospace; font-size: 13px; }
+  .recent-time { font-size: 11px; color: var(--text2); }
+  .badge-ok { background: var(--success-bg); color: var(--success); font-size: 11px; padding: 2px 8px; border-radius: 999px; margin-left: 6px; }
+  .badge-ko { background: var(--danger-bg); color: var(--danger); font-size: 11px; padding: 2px 8px; border-radius: 999px; margin-left: 6px; }
+
+  .section-icon { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .warn-icon { color: var(--warning); font-size: 16px; }
+
+  .empty-state { text-align: center; padding: 40px 0; color: var(--text3); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="container space-y">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="logo">RÖ</div>
+      <div>
+        <h1>Röchling — Ensaios</h1>
+        <div class="header-sub">
+          <span class="dot-live"></span>
+          Acompanhamento em tempo real de qualidade e desempenho
+        </div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <span class="badge-live"><span class="dot-live"></span> Ao vivo</span>
+      <button class="btn" id="btn-export">
+        &#8595; Exportar CSV
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="card">
+    <div class="filters-header">
+      <span style="font-size:14px;">&#9906;</span>
+      <span style="font-size:13px;font-weight:500;">Filtros</span>
+      <span class="badge-active" id="badge-active" style="display:none;">Ativos</span>
+      <button class="btn btn-sm" id="btn-reset" onclick="resetFilters()">&#8635; Limpar</button>
+    </div>
+    <div class="filters-row">
+      <div class="filter-group">
+        <label>Período</label>
+        <select id="f-period" onchange="applyFilters()">
+          <option value="7">Últimos 7 dias</option>
+          <option value="14">Últimos 14 dias</option>
+          <option value="30" selected>Últimos 30 dias</option>
+          <option value="90">Últimos 90 dias</option>
+          <option value="all">Todo período</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Produto</label>
+        <select id="f-product" onchange="applyFilters()">
+          <option value="all">Todos</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Tipo de Ensaio</label>
+        <select id="f-type" onchange="applyFilters()">
+          <option value="all">Todos</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Executante</label>
+        <select id="f-executor" onchange="applyFilters()">
+          <option value="all">Todos</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid" id="kpi-grid">
+    <div class="kpi-card"><div><div class="kpi-label">Total</div><div class="kpi-value" id="k-total">—</div></div><div class="kpi-icon icon-primary">&#9879;</div></div>
+    <div class="kpi-card"><div><div class="kpi-label">Aprovados</div><div class="kpi-value" id="k-aprov">—</div></div><div class="kpi-icon icon-success">&#10003;</div></div>
+    <div class="kpi-card"><div><div class="kpi-label">Reprovados</div><div class="kpi-value" id="k-reprov">—</div></div><div class="kpi-icon icon-danger">&#10007;</div></div>
+    <div class="kpi-card"><div><div class="kpi-label">Taxa Aprovação</div><div class="kpi-value" id="k-rate">—</div></div><div class="kpi-icon icon-info">&#8679;</div></div>
+    <div class="kpi-card"><div><div class="kpi-label">Executantes</div><div class="kpi-value" id="k-exec">—</div></div><div class="kpi-icon icon-primary">&#128100;</div></div>
+    <div class="kpi-card"><div><div class="kpi-label">Duração Média</div><div class="kpi-value" id="k-dur">—</div></div><div class="kpi-icon icon-warning">&#128336;</div></div>
+  </div>
+
+  <!-- Row 1: Trend + Gauge -->
+  <div class="grid-2-1">
+    <div class="card">
+      <div class="card-title">Tendência de Ensaios</div>
+      <div class="card-sub">Aprovados vs Reprovados ao longo do tempo</div>
+      <div style="position:relative;width:100%;height:240px;">
+        <canvas id="chart-trend" role="img" aria-label="Gráfico de área com tendência de aprovações e reprovações diárias"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Taxa de Aprovação</div>
+      <div class="card-sub">Performance global do período</div>
+      <div class="gauge-wrap">
+        <canvas id="chart-gauge" role="img" aria-label="Gráfico radial mostrando taxa de aprovação"></canvas>
+        <div class="gauge-center">
+          <div class="gauge-pct" id="gauge-pct">—</div>
+          <div class="gauge-label">de aprovação</div>
+        </div>
+      </div>
+      <div class="gauge-stats">
+        <div><div class="gauge-stat-val" id="gs-aprov" style="color:var(--success)">—</div><div class="gauge-stat-lbl">Aprovados</div></div>
+        <div><div class="gauge-stat-val" id="gs-reprov" style="color:var(--danger)">—</div><div class="gauge-stat-lbl">Reprovados</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 2: By product + By type -->
+  <div class="grid-2-1">
+    <div class="card">
+      <div class="card-title">Top Produtos por Volume</div>
+      <div class="card-sub">Quantidade de ensaios por PN</div>
+      <div style="position:relative;width:100%;height:280px;">
+        <canvas id="chart-product" role="img" aria-label="Gráfico de barras horizontais por produto"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Por Tipo de Ensaio</div>
+      <div class="card-sub">Distribuição</div>
+      <div style="position:relative;width:100%;height:280px;">
+        <canvas id="chart-type" role="img" aria-label="Gráfico de pizza por tipo de ensaio"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 3: Top rejected + Recent -->
+  <div class="grid-1-1">
+    <div class="card">
+      <div class="section-icon">
+        <span class="warn-icon">&#9888;</span>
+        <span class="card-title" style="margin:0;">Produtos com Mais Reprovações</span>
+      </div>
+      <div id="top-rejected"></div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="margin-bottom:12px;">Ensaios Recentes</div>
+      <div id="recent-list"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Dados de exemplo ──────────────────────────────────────
+const PRODUCTS = [
+  { id: 'p1', pn: 'RC-4412-A', description: 'Tampa dianteira', testType: 'Dimensional', unit: 'mm' },
+  { id: 'p2', pn: 'RC-4413-B', description: 'Suporte lateral', testType: 'Dimensional', unit: 'mm' },
+  { id: 'p3', pn: 'RC-5501-C', description: 'Peça de vedação', testType: 'Leak Test', unit: 'bar' },
+  { id: 'p4', pn: 'RC-5502-D', description: 'Carcaça interna', testType: 'Leak Test', unit: 'bar' },
+  { id: 'p5', pn: 'RC-6610-E', description: 'Conector elétrico', testType: 'Elétrico', unit: 'Ω' },
+  { id: 'p6', pn: 'RC-6611-F', description: 'Placa de circuito', testType: 'Elétrico', unit: 'V' },
+  { id: 'p7', pn: 'RC-7720-G', description: 'Perfil de borracha', testType: 'Torque', unit: 'Nm' },
+  { id: 'p8', pn: 'RC-7721-H', description: 'Fixador de reforço', testType: 'Torque', unit: 'Nm' },
+];
+
+const EXECUTORS = ['Ana Silva', 'Bruno Costa', 'Carla Matos', 'Diego Ferreira', 'Elena Rocha'];
+
+function rndPick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function rndBetween(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+function pad2(n) { return String(n).padStart(2, '0'); }
+
+function genTests() {
+  const tests = [];
+  const now = new Date();
+  for (let i = 0; i < 280; i++) {
+    const daysAgo = rndBetween(0, 89);
+    const d = new Date(now);
+    d.setDate(d.getDate() - daysAgo);
+    const dateStr = `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+    const hh = rndBetween(7, 17);
+    const mm = rndBetween(0, 59);
+    const dur = rndBetween(15, 120);
+    const endHH = Math.floor((hh * 60 + mm + dur) / 60);
+    const endMM = (hh * 60 + mm + dur) % 60;
+    const prod = rndPick(PRODUCTS);
+    const approved = Math.random() > (prod.testType === 'Leak Test' ? 0.22 : 0.12);
+    tests.push({
+      id: 'T' + String(i).padStart(4, '0'),
+      productId: prod.id,
+      date: dateStr,
+      startTime: `${pad2(hh)}:${pad2(mm)}`,
+      endTime: `${pad2(endHH > 23 ? 23 : endHH)}:${pad2(endMM)}`,
+      status: approved ? 'Aprovado' : 'Reprovado',
+      executor: rndPick(EXECUTORS),
+      result: (Math.random() * 10 + 1).toFixed(2),
+      createdAt: d.toISOString(),
+    });
+  }
+  return tests.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+const ALL_TESTS = genTests();
+const productMap = new Map(PRODUCTS.map(p => [p.id, p]));
+
+// ── Populate filter dropdowns ──────────────────────────────
+(function populateFilters() {
+  const fProd = document.getElementById('f-product');
+  PRODUCTS.forEach(p => {
+    const o = document.createElement('option');
+    o.value = p.id; o.textContent = `${p.pn} — ${p.description}`;
+    fProd.appendChild(o);
+  });
+  const types = [...new Set(PRODUCTS.map(p => p.testType))].sort();
+  const fType = document.getElementById('f-type');
+  types.forEach(t => {
+    const o = document.createElement('option');
+    o.value = t; o.textContent = t;
+    fType.appendChild(o);
+  });
+  const execs = [...new Set(ALL_TESTS.map(t => t.executor))].sort();
+  const fExec = document.getElementById('f-executor');
+  execs.forEach(e => {
+    const o = document.createElement('option');
+    o.value = e; o.textContent = e;
+    fExec.appendChild(o);
+  });
+})();
+
+// ── Chart instances ────────────────────────────────────────
+let chartTrend, chartGauge, chartProduct, chartType;
+
+function hexColor(cssVar) {
+  const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+  const MAP = {
+    success: dark ? '#9fe1cb' : '#0f6e56',
+    danger:  dark ? '#f09595' : '#a32d2d',
+    primary: dark ? '#afa9ec' : '#534ab7',
+    info:    dark ? '#85b7eb' : '#185fa5',
+    warning: dark ? '#fac775' : '#854f0b',
+    text2:   dark ? '#b4b2a9' : '#5f5e5a',
+    border:  dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)',
+    surface: dark ? '#2c2c2a' : '#ffffff',
+  };
+  return MAP[cssVar] || '#888';
+}
+
+function buildTrendChart(data) {
+  const ctx = document.getElementById('chart-trend');
+  if (chartTrend) chartTrend.destroy();
+  chartTrend = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: data.map(d => d.label),
+      datasets: [
+        {
+          label: 'Aprovado',
+          data: data.map(d => d.aprov),
+          borderColor: hexColor('success'),
+          backgroundColor: hexColor('success') + '33',
+          fill: true, tension: 0.4, pointRadius: 0,
+          borderDash: [],
+        },
+        {
+          label: 'Reprovado',
+          data: data.map(d => d.reprov),
+          borderColor: hexColor('danger'),
+          backgroundColor: hexColor('danger') + '22',
+          fill: true, tension: 0.4, pointRadius: 0,
+          borderDash: [4,3],
+        },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: true, position: 'bottom', labels: { color: hexColor('text2'), boxWidth: 10, font: { size: 11 } } } },
+      scales: {
+        x: { ticks: { color: hexColor('text2'), font: { size: 11 }, autoSkip: true, maxTicksLimit: 12 }, grid: { color: hexColor('border') } },
+        y: { ticks: { color: hexColor('text2'), font: { size: 11 } }, grid: { color: hexColor('border') }, beginAtZero: true },
+      },
+    },
+  });
+}
+
+function buildGaugeChart(rate) {
+  const ctx = document.getElementById('chart-gauge');
+  if (chartGauge) chartGauge.destroy();
+  chartGauge = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      datasets: [{
+        data: [Math.round(rate), Math.max(0, 100 - Math.round(rate))],
+        backgroundColor: [hexColor('success'), hexColor('border')],
+        borderWidth: 0,
+        circumference: 270, rotation: -135,
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '72%',
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+    },
+  });
+}
+
+function buildProductChart(data) {
+  const ctx = document.getElementById('chart-product');
+  if (chartProduct) chartProduct.destroy();
+  const h = Math.max(240, data.length * 42 + 60);
+  ctx.parentElement.style.height = h + 'px';
+  chartProduct = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: data.map(d => d.name),
+      datasets: [
+        { label: 'Aprovado', data: data.map(d => d.aprov), backgroundColor: hexColor('success') + 'cc', borderRadius: 0 },
+        { label: 'Reprovado', data: data.map(d => d.reprov), backgroundColor: hexColor('danger') + 'cc', borderRadius: 2 },
+      ],
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.raw}` } },
+      },
+      scales: {
+        x: { stacked: true, ticks: { color: hexColor('text2'), font: { size: 11 } }, grid: { color: hexColor('border') }, beginAtZero: true },
+        y: { stacked: true, ticks: { color: hexColor('text2'), font: { size: 11 } }, grid: { display: false } },
+      },
+    },
+  });
+}
+
+function buildTypeChart(data) {
+  const ctx = document.getElementById('chart-type');
+  if (chartType) chartType.destroy();
+  const palette = [hexColor('primary'), hexColor('info'), hexColor('success'), hexColor('warning'), hexColor('danger')];
+  chartType = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: data.map(d => d.name),
+      datasets: [{
+        data: data.map(d => d.value),
+        backgroundColor: data.map((_, i) => palette[i % palette.length]),
+        borderWidth: 0,
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '50%',
+      plugins: {
+        legend: { position: 'bottom', labels: { color: hexColor('text2'), boxWidth: 10, font: { size: 11 }, padding: 12 } },
+      },
+    },
+  });
+}
+
+// ── Filter logic ───────────────────────────────────────────
+function getFiltered() {
+  const period = document.getElementById('f-period').value;
+  const prodF = document.getElementById('f-product').value;
+  const typeF = document.getElementById('f-type').value;
+  const execF = document.getElementById('f-executor').value;
+
+  let cutoff = null;
+  if (period !== 'all') {
+    const d = new Date();
+    d.setDate(d.getDate() - (parseInt(period) - 1));
+    cutoff = d.toISOString().slice(0, 10);
+  }
+
+  return ALL_TESTS.filter(t => {
+    if (cutoff && t.date < cutoff) return false;
+    if (prodF !== 'all' && t.productId !== prodF) return false;
+    if (execF !== 'all' && t.executor !== execF) return false;
+    if (typeF !== 'all') {
+      const p = productMap.get(t.productId);
+      if (p?.testType !== typeF) return false;
+    }
+    return true;
+  });
+}
+
+function initials(name) {
+  return name.split(' ').slice(0, 2).map(n => n[0]?.toUpperCase() ?? '').join('');
+}
+
+function applyFilters() {
+  const filtered = getFiltered();
+  const period = document.getElementById('f-period').value;
+
+  // Active badge
+  const hasActive = period !== '30'
+    || document.getElementById('f-product').value !== 'all'
+    || document.getElementById('f-type').value !== 'all'
+    || document.getElementById('f-executor').value !== 'all';
+  document.getElementById('badge-active').style.display = hasActive ? '' : 'none';
+
+  // KPIs
+  const total = filtered.length;
+  const aprov = filtered.filter(t => t.status === 'Aprovado').length;
+  const reprov = total - aprov;
+  const rate = total ? (aprov / total) * 100 : 0;
+  const execSet = new Set(filtered.map(t => t.executor));
+  const durations = filtered.map(t => {
+    const [sh, sm] = t.startTime.split(':').map(Number);
+    const [eh, em] = t.endTime.split(':').map(Number);
+    return Math.max(0, (eh * 60 + em) - (sh * 60 + sm));
+  }).filter(d => d > 0);
+  const avgDur = durations.length ? Math.round(durations.reduce((a,b)=>a+b,0)/durations.length) : 0;
+
+  document.getElementById('k-total').textContent = total;
+  document.getElementById('k-aprov').textContent = aprov;
+  document.getElementById('k-reprov').textContent = reprov;
+  document.getElementById('k-rate').textContent = total ? rate.toFixed(1) + '%' : '—';
+  document.getElementById('k-exec').textContent = execSet.size;
+  document.getElementById('k-dur').textContent = avgDur ? avgDur + ' min' : '—';
+  document.getElementById('gauge-pct').textContent = total ? rate.toFixed(1) + '%' : '—';
+  document.getElementById('gs-aprov').textContent = aprov;
+  document.getElementById('gs-reprov').textContent = reprov;
+
+  // Trend
+  const days = period === 'all' ? 30 : parseInt(period);
+  const trendData = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    const label = `${pad2(d.getDate())}/${pad2(d.getMonth()+1)}`;
+    const day = filtered.filter(t => t.date === key);
+    trendData.push({ label, aprov: day.filter(t=>t.status==='Aprovado').length, reprov: day.filter(t=>t.status!=='Aprovado').length });
+  }
+  buildTrendChart(trendData);
+  buildGaugeChart(rate);
+
+  // By product (top 8)
+  const prodAgg = new Map();
+  filtered.forEach(t => {
+    const p = productMap.get(t.productId);
+    const key = p?.pn ?? '—';
+    if (!prodAgg.has(key)) prodAgg.set(key, { name: key, aprov: 0, reprov: 0 });
+    const e = prodAgg.get(key);
+    t.status === 'Aprovado' ? e.aprov++ : e.reprov++;
+  });
+  const byProd = [...prodAgg.values()].map(d => ({ ...d, total: d.aprov + d.reprov }))
+    .sort((a, b) => b.total - a.total).slice(0, 8);
+  buildProductChart(byProd);
+
+  // By type
+  const typeAgg = new Map();
+  filtered.forEach(t => {
+    const p = productMap.get(t.productId);
+    const key = p?.testType ?? '—';
+    typeAgg.set(key, (typeAgg.get(key) ?? 0) + 1);
+  });
+  const byType = [...typeAgg.entries()].map(([name, value]) => ({ name, value }));
+  buildTypeChart(byType);
+
+  // Top rejected
+  const topRej = byProd.filter(p => p.reprov > 0).sort((a,b)=>b.reprov-a.reprov).slice(0, 5);
+  const rejEl = document.getElementById('top-rejected');
+  if (topRej.length === 0) {
+    rejEl.innerHTML = '<div class="empty-state">&#127881; Nenhuma reprovação no período!</div>';
+  } else {
+    rejEl.innerHTML = topRej.map(p => {
+      const pct = p.total ? (p.reprov / p.total * 100) : 0;
+      return `<div class="prog-item">
+        <div class="prog-row">
+          <span class="prog-pn">${p.name}</span>
+          <span class="prog-meta">${p.reprov}/${p.total} <span class="badge-danger">${pct.toFixed(0)}%</span></span>
+        </div>
+        <div class="prog-track"><div class="prog-fill" style="width:${pct.toFixed(1)}%"></div></div>
+      </div>`;
+    }).join('');
+  }
+
+  // Recent
+  const recent = [...filtered].sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).slice(0, 5);
+  const recEl = document.getElementById('recent-list');
+  if (recent.length === 0) {
+    recEl.innerHTML = '<div class="empty-state">Nenhum ensaio registrado.</div>';
+  } else {
+    recEl.innerHTML = recent.map(t => {
+      const p = productMap.get(t.productId);
+      const ok = t.status === 'Aprovado';
+      return `<div class="recent-item">
+        <div class="avatar" title="${t.executor}">${initials(t.executor)}</div>
+        <div class="recent-info">
+          <div class="recent-pn">${p?.pn ?? '—'}<span class="${ok ? 'badge-ok' : 'badge-ko'}">${ok ? 'Aprovado' : 'Reprovado'}</span></div>
+          <div class="recent-meta">${p?.testType ?? ''} • ${t.executor} • ${t.date}</div>
+        </div>
+        <div class="recent-right">
+          <div class="recent-result">${t.result}${p?.unit ? ' '+p.unit : ''}</div>
+          <div class="recent-time">${t.startTime}–${t.endTime}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Enable/disable export
+  document.getElementById('btn-export').disabled = !filtered.length;
+}
+
+function resetFilters() {
+  document.getElementById('f-period').value = '30';
+  document.getElementById('f-product').value = 'all';
+  document.getElementById('f-type').value = 'all';
+  document.getElementById('f-executor').value = 'all';
+  applyFilters();
+}
+
+// ── Export CSV ─────────────────────────────────────────────
+document.getElementById('btn-export').addEventListener('click', () => {
+  const filtered = getFiltered();
+  const rows = [['ID','Produto PN','Tipo Ensaio','Data','Início','Fim','Executante','Resultado','Unidade','Status']];
+  filtered.forEach(t => {
+    const p = productMap.get(t.productId);
+    rows.push([t.id, p?.pn ?? '', p?.testType ?? '', t.date, t.startTime, t.endTime, t.executor, t.result, p?.unit ?? '', t.status]);
+  });
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `rochling-ensaios-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+});
+
+// ── Init ──────────────────────────────────────────────────
+applyFilters();
+
+function pad2(n) { return String(n).padStart(2, '0'); }
+</script>
+</body>
+</html>
