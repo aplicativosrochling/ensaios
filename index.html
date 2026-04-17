@@ -7,45 +7,59 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 
-    <!-- ══════════════════════════════════════════
-         FIREBASE SDK
-         Substitua a config abaixo pelas suas credenciais:
-         Console Firebase → Configurações do Projeto → Seus apps → Web
-    ═══════════════════════════════════════════ -->
+    <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile }
-            from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, getDoc, getDocs, deleteDoc, onSnapshot, serverTimestamp, query, orderBy }
+        import { getFirestore, collection, doc, setDoc, getDocs, deleteDoc, onSnapshot, serverTimestamp, query, orderBy, enableIndexedDbPersistence }
             from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
-        // ─── SUBSTITUA AQUI ───────────────────────────────
-        // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+        // ═══════════════════════════════════════════════════════════
+        // 🔧 SUBSTITUA AQUI COM AS SUAS CREDENCIAIS DO FIREBASE 🔧
+        // ═══════════════════════════════════════════════════════════
+        const firebaseConfig = {
+            apiKey: "SUA_API_KEY",
+            authDomain: "SEU_PROJECT_ID.firebaseapp.com",
+            projectId: "SEU_PROJECT_ID",
+            storageBucket: "SEU_PROJECT_ID.appspot.com",
+            messagingSenderId: "SEU_SENDER_ID",
+            appId: "SEU_APP_ID"
+        };
+        // ═══════════════════════════════════════════════════════════
 
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyB_OvLi3SSBML2QpeXhl7oRp3NYnv7GaGo",
-  authDomain: "ensaios-268ab.firebaseapp.com",
-  projectId: "ensaios-268ab",
-  storageBucket: "ensaios-268ab.firebasestorage.app",
-  messagingSenderId: "913331032135",
-  appId: "1:913331032135:web:f4a17ebc6bf141b59be162"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-        // ─────────────────────────────────────────────────
-
-        const app  = initializeApp(firebaseConfig);
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
         const auth = getAuth(app);
-        const db   = getFirestore(app);
 
-        // ── expose globals ──────────────────────────────
-        window._fb = { auth, db, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile,
-                       collection, doc, setDoc, getDoc, getDocs, deleteDoc, onSnapshot, serverTimestamp, query, orderBy };
+        // Enable offline persistence
+        enableIndexedDbPersistence(db).catch(err => {
+            console.warn("Offline persistence error:", err);
+        });
+
+        // Sign in anonymously automatically
+        let isAuthenticated = false;
+        
+        async function initAnonymousAuth() {
+            try {
+                const userCred = await signInAnonymously(auth);
+                console.log("Anonymous user signed in:", userCred.user.uid);
+                isAuthenticated = true;
+                return userCred.user;
+            } catch (error) {
+                console.error("Anonymous auth error:", error);
+                // Still proceed without auth for read-only mode
+                return null;
+            }
+        }
+
+        // Expose globals
+        window._fb = { 
+            db, auth, 
+            collection, doc, setDoc, getDocs, deleteDoc, onSnapshot, 
+            serverTimestamp, query, orderBy,
+            initAnonymousAuth, onAuthStateChanged,
+            isAuthenticated: () => isAuthenticated
+        };
     </script>
 
     <style>
@@ -83,180 +97,31 @@ const app = initializeApp(firebaseConfig);
 
         body { font-family: var(--font-body); background: var(--bg); color: var(--fg); min-height: 100vh; line-height: 1.5; transition: background 0.3s, color 0.3s; }
 
-        /* ── AUTH SCREEN ──────────────────────── */
-        #authScreen {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed; inset: 0;
             background: var(--bg);
-            position: relative;
-            overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 9000;
+            flex-direction: column; gap: 14px;
+            transition: opacity 0.3s;
         }
-
-        #authScreen::before {
-            content: '';
-            position: absolute;
-            width: 600px; height: 600px;
-            background: radial-gradient(circle, rgba(77,158,255,0.07) 0%, transparent 70%);
-            top: -100px; right: -100px;
-            pointer-events: none;
-        }
-
-        #authScreen::after {
-            content: '';
-            position: absolute;
-            width: 400px; height: 400px;
-            background: radial-gradient(circle, rgba(167,139,250,0.06) 0%, transparent 70%);
-            bottom: -80px; left: -80px;
-            pointer-events: none;
-        }
-
-        .auth-box {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 40px 36px;
-            width: 92%;
-            max-width: 420px;
-            box-shadow: 0 24px 80px rgba(0,0,0,0.5);
-            position: relative;
-            z-index: 1;
-        }
-
-        .auth-logo {
-            font-family: var(--font-display);
-            font-weight: 800;
-            font-size: 1.6rem;
-            color: var(--fg);
-            margin-bottom: 4px;
-        }
-
-        .auth-logo span { color: var(--primary); }
-
-        .auth-sub {
-            font-size: 0.75rem;
-            color: var(--muted-fg);
-            font-family: var(--font-mono);
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            margin-bottom: 28px;
-        }
-
-        .auth-tabs {
-            display: flex;
-            gap: 4px;
-            background: var(--surface2);
-            border-radius: 10px;
-            padding: 4px;
-            margin-bottom: 24px;
-        }
-
-        .auth-tab {
-            flex: 1;
-            padding: 8px;
-            border: none;
-            background: transparent;
-            border-radius: 8px;
-            font-family: var(--font-body);
-            font-size: 0.82rem;
-            font-weight: 600;
-            color: var(--muted-fg);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .auth-tab.active { background: var(--surface); color: var(--fg); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
-
-        .auth-form { display: none; }
-        .auth-form.active { display: block; }
-
-        .auth-field { margin-bottom: 14px; }
-
-        .auth-field label {
-            display: block;
-            font-size: 0.68rem;
-            font-family: var(--font-mono);
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: var(--muted-fg);
-            margin-bottom: 5px;
-        }
-
-        .auth-field input {
-            width: 100%;
-            padding: 11px 14px;
-            border-radius: 9px;
-            border: 1px solid var(--border2);
-            background: var(--surface2);
-            color: var(--fg);
-            font-size: 0.875rem;
-            font-family: var(--font-body);
-            outline: none;
-            transition: border-color 0.15s, box-shadow 0.15s;
-        }
-
-        .auth-field input:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(77,158,255,0.12);
-        }
-
-        .auth-submit {
-            width: 100%;
-            padding: 12px;
-            border-radius: 10px;
-            border: none;
-            background: var(--primary);
-            color: #fff;
-            font-size: 0.9rem;
-            font-weight: 700;
-            font-family: var(--font-body);
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-top: 6px;
-        }
-
-        .auth-submit:hover { opacity: 0.88; transform: translateY(-1px); }
-        .auth-submit:active { transform: translateY(0); }
-
-        .auth-error {
-            background: var(--danger-dim);
-            border: 1px solid rgba(255,90,110,0.3);
-            color: var(--danger);
-            padding: 10px 14px;
-            border-radius: 8px;
-            font-size: 0.78rem;
-            margin-top: 12px;
-            display: none;
-        }
-
-        .auth-loading {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            font-size: 0.82rem;
-            color: var(--muted-fg);
-            padding: 20px 0;
-        }
-
+        .loading-overlay.hidden { opacity: 0; pointer-events: none; }
+        .loading-logo { font-family: var(--font-display); font-weight: 800; font-size: 1.6rem; color: var(--fg); }
+        .loading-logo span { color: var(--primary); }
         .spinner {
-            width: 18px; height: 18px;
-            border: 2px solid var(--border2);
+            width: 30px; height: 30px;
+            border: 3px solid var(--border2);
             border-top-color: var(--primary);
             border-radius: 50%;
             animation: spin 0.7s linear infinite;
         }
-
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ── APP (hidden until auth) ─────────── */
-        #appScreen { display: none; }
-
-        /* ── LAYOUT ──────────────────────────── */
+        /* Layout */
         .layout { display: flex; min-height: 100vh; }
 
-        /* ── SIDEBAR ──────────────────────────── */
+        /* Sidebar */
         .sidebar {
             width: 220px; background: var(--surface);
             border-right: 1px solid var(--border);
@@ -287,29 +152,15 @@ const app = initializeApp(firebaseConfig);
 
         .sidebar-footer { padding: 16px 12px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
 
-        /* User badge */
-        .user-badge {
-            display: flex; align-items: center; gap: 10px;
+        .status-badge {
+            display: flex; align-items: center; gap: 8px;
             padding: 10px 12px;
             background: var(--surface2);
             border-radius: var(--radius);
             border: 1px solid var(--border);
+            font-size: 0.75rem;
         }
-
-        .user-avatar {
-            width: 30px; height: 30px; border-radius: 50%;
-            background: var(--primary-dim);
-            border: 1px solid var(--primary);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 0.75rem; font-weight: 700; color: var(--primary);
-            font-family: var(--font-mono);
-            flex-shrink: 0;
-        }
-
-        .user-info { flex: 1; min-width: 0; }
-        .user-name { font-size: 0.78rem; font-weight: 600; color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .user-email { font-size: 0.65rem; color: var(--muted-fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
         .theme-btn {
             display: flex; align-items: center; gap: 8px;
             padding: 8px 12px; border-radius: var(--radius);
@@ -317,21 +168,9 @@ const app = initializeApp(firebaseConfig);
             color: var(--muted-fg); cursor: pointer;
             font-size: 0.8rem; font-family: var(--font-body); width: 100%; transition: all 0.15s;
         }
-
         .theme-btn:hover { color: var(--fg); border-color: var(--border2); }
 
-        .logout-btn {
-            display: flex; align-items: center; gap: 8px;
-            padding: 8px 12px; border-radius: var(--radius);
-            border: 1px solid rgba(255,90,110,0.2);
-            background: var(--danger-dim);
-            color: var(--danger); cursor: pointer;
-            font-size: 0.8rem; font-family: var(--font-body); width: 100%; transition: all 0.15s;
-        }
-
-        .logout-btn:hover { background: rgba(255,90,110,0.2); }
-
-        /* ── MAIN ──────────────────────────── */
+        /* Main */
         .main { margin-left: 220px; flex: 1; min-height: 100vh; }
 
         .topbar {
@@ -345,22 +184,11 @@ const app = initializeApp(firebaseConfig);
         .topbar-title { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; }
         .topbar-actions { display: flex; gap: 10px; align-items: center; }
 
-        /* sync indicator */
-        .sync-dot {
-            width: 8px; height: 8px; border-radius: 50%;
-            background: var(--success);
-            box-shadow: 0 0 0 2px var(--success-dim);
-            animation: pulse-dot 2s ease-in-out infinite;
-        }
-
-        @keyframes pulse-dot {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
-        }
-
+        .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 2px var(--success-dim); animation: pulse-dot 2s ease-in-out infinite; }
+        @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
         .sync-label { font-size: 0.72rem; color: var(--success); font-family: var(--font-mono); }
 
-        /* ── BUTTONS ──────────────────────────── */
+        /* Buttons */
         .btn {
             display: inline-flex; align-items: center; gap: 6px;
             padding: 8px 16px; border-radius: var(--radius);
@@ -368,52 +196,43 @@ const app = initializeApp(firebaseConfig);
             color: var(--fg2); cursor: pointer; font-size: 0.8rem;
             font-family: var(--font-body); font-weight: 500; transition: all 0.15s;
         }
-
         .btn:hover { color: var(--fg); border-color: var(--muted); background: var(--surface); }
         .btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
         .btn-primary:hover { opacity: 0.88; }
         .btn-sm { padding: 5px 12px; font-size: 0.75rem; }
         .btn-ghost { background: transparent; border-color: transparent; }
-        .btn-ghost:hover { background: var(--surface2); border-color: var(--border); }
         .btn-print { background: linear-gradient(135deg, var(--accent), var(--primary)); border: none; color: #fff; font-weight: 600; }
-        .btn-print:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(77,158,255,0.3); }
-
-        /* ── CONTENT ──────────────────────────── */
+        
+        /* Content */
         .content { padding: 28px; }
         .section { display: none; }
         .section.active { display: block; }
 
-        /* ── FILTERS ──────────────────────────── */
+        /* Filters */
         .filters-bar {
             display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;
             background: var(--surface); border: 1px solid var(--border);
             border-radius: var(--radius-lg); padding: 16px 20px; margin-bottom: 24px;
         }
-
         .filter-group { display: flex; flex-direction: column; gap: 4px; min-width: 160px; }
-
         .filter-group label {
             font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em;
             color: var(--muted-fg); font-family: var(--font-mono);
         }
-
-        select, input[type="text"], input[type="number"], input[type="date"], input[type="time"] {
+        select, input {
             padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border2);
             background: var(--surface2); color: var(--fg); font-size: 0.82rem;
-            font-family: var(--font-body); outline: none; transition: border-color 0.15s; width: 100%;
+            font-family: var(--font-body); outline: none; width: 100%;
         }
-
         select:focus, input:focus { border-color: var(--primary); }
 
-        /* ── KPI ──────────────────────────── */
+        /* KPI Grid */
         .kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; margin-bottom: 24px; }
-
         .kpi-card {
             background: var(--surface); border: 1px solid var(--border);
             border-radius: var(--radius-lg); padding: 18px 16px;
             position: relative; overflow: hidden; transition: box-shadow 0.2s, transform 0.2s;
         }
-
         .kpi-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
         .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
         .kpi-card.c-primary::before { background: var(--primary); }
@@ -421,7 +240,6 @@ const app = initializeApp(firebaseConfig);
         .kpi-card.c-danger::before  { background: var(--danger); }
         .kpi-card.c-accent::before  { background: var(--accent); }
         .kpi-card.c-warning::before { background: var(--warning); }
-
         .kpi-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted-fg); font-family: var(--font-mono); margin-bottom: 8px; }
         .kpi-value { font-family: var(--font-display); font-weight: 700; font-size: 1.8rem; line-height: 1; }
         .kpi-value.c-primary { color: var(--primary); }
@@ -431,40 +249,33 @@ const app = initializeApp(firebaseConfig);
         .kpi-value.c-warning { color: var(--warning); }
         .kpi-icon { position: absolute; top: 16px; right: 16px; font-size: 1.4rem; opacity: 0.3; }
 
-        /* ── CHARTS ──────────────────────────── */
-        .charts-row   { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 20px; }
-        .charts-row-3 { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 20px; margin-bottom: 20px; }
-
+        /* Charts */
+        .charts-row { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 20px; }
         .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; }
         .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
         .card-title { font-family: var(--font-display); font-weight: 700; font-size: 0.95rem; }
         .card-subtitle { font-size: 0.75rem; color: var(--muted-fg); margin-top: 2px; }
-        .chart-wrap    { position: relative; height: 260px; }
-        .chart-wrap-sm { position: relative; height: 220px; }
-
+        .chart-wrap { position: relative; height: 260px; }
         .gauge-wrap { position: relative; height: 180px; display: flex; align-items: center; justify-content: center; }
         .gauge-center { position: absolute; text-align: center; top: 55%; }
         .gauge-pct { font-family: var(--font-display); font-weight: 800; font-size: 2.2rem; color: var(--success); }
         .gauge-lbl { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted-fg); font-family: var(--font-mono); }
         .gauge-stats { display: flex; justify-content: space-around; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
-        .gauge-stat-val { font-family: var(--font-display); font-weight: 700; font-size: 1.2rem; }
-        .gauge-stat-lbl { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted-fg); font-family: var(--font-mono); }
-
+        
+        /* Lists */
         .list-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
         .list-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
-        .list-item:last-child { border-bottom: none; }
-
-        /* ── BADGES ──────────────────────────── */
-        .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; font-family: var(--font-mono); }
+        .badge {
+            display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px;
+            font-size: 0.7rem; font-weight: 600; font-family: var(--font-mono);
+        }
         .badge-success { background: var(--success-dim); color: var(--success); }
         .badge-danger  { background: var(--danger-dim);  color: var(--danger); }
         .badge-warning { background: var(--warning-dim); color: var(--warning); }
-        .badge-primary { background: var(--primary-dim); color: var(--primary); }
-
         .prog { height: 5px; background: var(--border2); border-radius: 99px; overflow: hidden; margin-top: 6px; }
         .prog-fill { height: 100%; background: var(--danger); border-radius: 99px; transition: width 0.4s; }
 
-        /* ── TABLE ──────────────────────────── */
+        /* Tables */
         .table-wrap { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
         th {
@@ -477,13 +288,13 @@ const app = initializeApp(firebaseConfig);
         tr:hover td { background: var(--surface2); }
         .mono { font-family: var(--font-mono); font-size: 0.78rem; color: var(--fg); }
 
-        /* ── SEARCH ──────────────────────────── */
+        /* Search */
         .search-row { display: flex; gap: 12px; margin-bottom: 16px; align-items: center; }
         .search-wrap { position: relative; flex: 1; }
         .search-wrap input { padding-left: 36px; }
-        .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted-fg); font-size: 0.85rem; }
+        .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted-fg); }
 
-        /* ── MODAL ──────────────────────────── */
+        /* Modals */
         .modal-bg {
             position: fixed; inset: 0; background: rgba(0,0,0,0.65);
             display: flex; align-items: center; justify-content: center;
@@ -501,22 +312,24 @@ const app = initializeApp(firebaseConfig);
         .modal-title { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; }
         .form-group { margin-bottom: 14px; }
         .form-group label { display: block; font-size: 0.72rem; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted-fg); margin-bottom: 5px; }
-        .form-hint { font-size: 0.7rem; color: var(--muted-fg); margin-top: 3px; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
         .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border); }
         .spec-hint { font-size: 0.7rem; color: var(--primary); margin-top: 3px; }
+        .table-actions { display: flex; gap: 6px; }
+        .action-btn { padding: 5px 9px; border-radius: 6px; border: 1px solid var(--border2); background: var(--surface2); cursor: pointer; font-size: 0.72rem; transition: all 0.15s; }
+        .action-btn.del:hover { color: var(--danger); border-color: var(--danger); background: var(--danger-dim); }
+        .empty-state { text-align: center; padding: 32px 20px; color: var(--muted-fg); }
 
-        /* ── PRINT MODAL ──────────────────────────── */
+        /* Print Modal */
         .print-modal-bg {
             position: fixed; inset: 0; background: rgba(0,0,0,0.75);
             display: flex; align-items: center; justify-content: center;
             z-index: 800; opacity: 0; visibility: hidden; transition: opacity 0.2s;
         }
         .print-modal-bg.open { opacity: 1; visibility: visible; }
-        .print-modal { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius-lg); width: 92%; max-width: 540px; max-height: 90vh; overflow-y: auto; transform: scale(0.94); transition: transform 0.2s; }
+        .print-modal { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius-lg); width: 92%; max-width: 540px; max-height: 90vh; overflow-y: auto; }
         .print-modal-bg.open .print-modal { transform: scale(1); }
         .pm-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--border); }
-        .pm-title { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; }
         .pm-body { padding: 20px 24px; }
         .pm-section { margin-bottom: 20px; }
         .pm-section-label { font-family: var(--font-mono); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted-fg); margin-bottom: 10px; }
@@ -527,7 +340,7 @@ const app = initializeApp(firebaseConfig);
         .pm-check input { display: none; }
         .pm-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
 
-        /* ── TOAST ──────────────────────────── */
+        /* Toast */
         .toast-area { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
         .toast {
             background: var(--surface2); border: 1px solid var(--border2);
@@ -540,42 +353,16 @@ const app = initializeApp(firebaseConfig);
         .toast-success { border-left: 3px solid var(--success); }
         .toast-error   { border-left: 3px solid var(--danger); }
 
-        /* ── LOADING OVERLAY ──────────────────────────── */
-        .loading-overlay {
-            position: fixed; inset: 0;
-            background: var(--bg);
-            display: flex; align-items: center; justify-content: center;
-            z-index: 9000;
-            flex-direction: column; gap: 14px;
-            transition: opacity 0.3s;
-        }
-        .loading-overlay.hidden { opacity: 0; pointer-events: none; }
-        .loading-logo { font-family: var(--font-display); font-weight: 800; font-size: 1.6rem; color: var(--fg); }
-        .loading-logo span { color: var(--primary); }
-
-        /* ── TABLE ACTIONS ──────────────────────────── */
-        .table-actions { display: flex; gap: 6px; }
-        .action-btn { padding: 5px 9px; border-radius: 6px; border: 1px solid var(--border2); background: var(--surface2); cursor: pointer; font-size: 0.72rem; color: var(--muted-fg); transition: all 0.15s; }
-        .action-btn:hover { color: var(--fg); border-color: var(--muted); }
-        .action-btn.del:hover { color: var(--danger); border-color: var(--danger); background: var(--danger-dim); }
-
-        /* ── EMPTY STATE ──────────────────────────── */
-        .empty-state { text-align: center; padding: 32px 20px; color: var(--muted-fg); }
-        .empty-icon { font-size: 2.5rem; opacity: 0.4; margin-bottom: 12px; }
-
-        /* ── RESPONSIVE ──────────────────────────── */
         @media (max-width: 1200px) {
             .kpi-grid { grid-template-columns: repeat(3, 1fr); }
-            .charts-row, .charts-row-3 { grid-template-columns: 1fr; }
+            .charts-row { grid-template-columns: 1fr; }
         }
-
         @media (max-width: 900px) {
-            .sidebar { transform: translateX(-100%); }
+            .sidebar { transform: translateX(-100%); position: fixed; transition: transform 0.3s; }
             .main { margin-left: 0; }
             .kpi-grid { grid-template-columns: repeat(2, 1fr); }
             .list-row { grid-template-columns: 1fr; }
         }
-
         @media print {
             body { background: #fff !important; color: #000 !important; }
             .sidebar, .topbar, .toast-area, .print-modal-bg, .modal-bg, .no-print { display: none !important; }
@@ -586,65 +373,12 @@ const app = initializeApp(firebaseConfig);
 </head>
 <body data-theme="dark">
 
-<!-- ══════════════════════
-     LOADING OVERLAY
-══════════════════════ -->
 <div class="loading-overlay" id="loadingOverlay">
     <div class="loading-logo">Rochling <span>QA</span></div>
     <div class="spinner"></div>
+    <div style="font-size: 0.8rem; color: var(--muted-fg);">Conectando ao Firebase...</div>
 </div>
 
-<!-- ══════════════════════
-     AUTH SCREEN
-══════════════════════ -->
-<div id="authScreen">
-    <div class="auth-box">
-        <div class="auth-logo">Rochling <span>QA</span></div>
-        <div class="auth-sub">Sistema de Gestão de Ensaios</div>
-
-        <div class="auth-tabs">
-            <button class="auth-tab active" onclick="switchAuthTab('login')">Entrar</button>
-            <button class="auth-tab" onclick="switchAuthTab('register')">Criar Conta</button>
-        </div>
-
-        <!-- LOGIN FORM -->
-        <div id="loginForm" class="auth-form active">
-            <div class="auth-field">
-                <label>E-mail</label>
-                <input type="email" id="loginEmail" placeholder="seu@email.com" autocomplete="email">
-            </div>
-            <div class="auth-field">
-                <label>Senha</label>
-                <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
-            </div>
-            <button class="auth-submit" onclick="doLogin()">Entrar no Sistema</button>
-            <div class="auth-error" id="loginError"></div>
-        </div>
-
-        <!-- REGISTER FORM -->
-        <div id="registerForm" class="auth-form">
-            <div class="auth-field">
-                <label>Nome Completo</label>
-                <input type="text" id="regName" placeholder="Seu nome">
-            </div>
-            <div class="auth-field">
-                <label>E-mail</label>
-                <input type="email" id="regEmail" placeholder="seu@email.com" autocomplete="email">
-            </div>
-            <div class="auth-field">
-                <label>Senha</label>
-                <input type="password" id="regPassword" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
-            </div>
-            <button class="auth-submit" onclick="doRegister()">Criar Conta</button>
-            <div class="auth-error" id="registerError"></div>
-        </div>
-    </div>
-</div>
-
-<!-- ══════════════════════
-     APP SCREEN
-══════════════════════ -->
-<div id="appScreen">
 <div class="layout">
     <!-- SIDEBAR -->
     <aside class="sidebar">
@@ -666,18 +400,12 @@ const app = initializeApp(firebaseConfig);
             </button>
         </nav>
         <div class="sidebar-footer">
-            <div class="user-badge">
-                <div class="user-avatar" id="userAvatar">–</div>
-                <div class="user-info">
-                    <div class="user-name" id="userName">–</div>
-                    <div class="user-email" id="userEmail">–</div>
-                </div>
+            <div class="status-badge">
+                <div class="status-dot"></div>
+                <span>Online · Firebase</span>
             </div>
             <button class="theme-btn" onclick="toggleTheme()">
                 <span id="themeIcon">☀️</span> <span id="themeLabel">Tema Claro</span>
-            </button>
-            <button class="logout-btn" onclick="doLogout()">
-                🚪 Sair
             </button>
         </div>
     </aside>
@@ -695,8 +423,7 @@ const app = initializeApp(firebaseConfig);
         </header>
 
         <div class="content">
-
-            <!-- ── DASHBOARD ── -->
+            <!-- DASHBOARD -->
             <div id="dashboard" class="section active">
                 <div class="filters-bar no-print">
                     <div class="filter-group">
@@ -760,7 +487,7 @@ const app = initializeApp(firebaseConfig);
                     </div>
                     <div class="card">
                         <div class="card-header"><div><div class="card-title">Por Tipo de Ensaio</div><div class="card-subtitle">Distribuição</div></div></div>
-                        <div class="chart-wrap-sm"><canvas id="typeChart"></canvas></div>
+                        <div class="chart-wrap-sm"><canvas id="typeChart" style="height:220px;"></canvas></div>
                     </div>
                 </div>
 
@@ -776,7 +503,7 @@ const app = initializeApp(firebaseConfig);
                 </div>
             </div>
 
-            <!-- ── PRODUCTS ── -->
+            <!-- PRODUCTS -->
             <div id="products" class="section">
                 <div class="card">
                     <div class="card-header">
@@ -798,7 +525,7 @@ const app = initializeApp(firebaseConfig);
                 </div>
             </div>
 
-            <!-- ── TESTS ── -->
+            <!-- TESTS -->
             <div id="tests" class="section">
                 <div class="card">
                     <div class="card-header">
@@ -819,13 +546,11 @@ const app = initializeApp(firebaseConfig);
                     </div>
                 </div>
             </div>
-
         </div>
     </div>
 </div>
-</div><!-- /appScreen -->
 
-<!-- ══ PRODUCT MODAL ══ -->
+<!-- PRODUCT MODAL -->
 <div class="modal-bg" id="productModal">
     <div class="modal">
         <div class="modal-head">
@@ -841,7 +566,7 @@ const app = initializeApp(firebaseConfig);
             <div class="form-group"><label>Descrição *</label><input type="text" id="productDescription" required placeholder="Descrição do produto"></div>
             <div class="form-row">
                 <div class="form-group"><label>Tipo de Ensaio *</label><input type="text" id="productTestType" required placeholder="Ex: Tração, Dureza, Impacto"></div>
-                <div class="form-group"><label>Especificação Técnica *</label><input type="text" id="productSpec" required placeholder="Ex: ≥ 50, ≤ 200"><div class="form-hint">Use ≥ para mínimo ou ≤ para máximo exigido</div></div>
+                <div class="form-group"><label>Especificação Técnica *</label><input type="text" id="productSpec" required placeholder="Ex: ≥ 50, ≤ 200"><div class="spec-hint">Use ≥ para mínimo ou ≤ para máximo exigido</div></div>
             </div>
             <div class="form-actions">
                 <button type="button" class="btn" onclick="closeModal('productModal')">Cancelar</button>
@@ -851,7 +576,7 @@ const app = initializeApp(firebaseConfig);
     </div>
 </div>
 
-<!-- ══ TEST MODAL ══ -->
+<!-- TEST MODAL -->
 <div class="modal-bg" id="testModal">
     <div class="modal">
         <div class="modal-head">
@@ -886,15 +611,11 @@ const app = initializeApp(firebaseConfig);
     </div>
 </div>
 
-<!-- ══ PRINT MODAL ══ -->
+<!-- PRINT MODAL -->
 <div class="print-modal-bg" id="printModal">
     <div class="print-modal">
         <div class="pm-header"><div class="pm-title">🖨️ Imprimir Relatório</div><button class="btn btn-ghost btn-sm" onclick="closePrintModal()">✕</button></div>
         <div class="pm-body">
-            <div class="pm-section">
-                <div class="pm-section-label">Período (filtro atual aplicado)</div>
-                <div style="font-size:0.82rem;color:var(--muted-fg);padding:8px 12px;background:var(--surface2);border-radius:8px;font-family:var(--font-mono);" id="printPeriodInfo">—</div>
-            </div>
             <div class="pm-section">
                 <div class="pm-section-label">Seções do Relatório</div>
                 <div class="pm-checkgrid">
@@ -903,14 +624,8 @@ const app = initializeApp(firebaseConfig);
                     <label class="pm-check selected" id="chkRejected"><input type="checkbox" value="rejected" checked onchange="togglePrintCheck(this, 'chkRejected')"><span>⚠️</span><span>Mais Reprovações</span></label>
                     <label class="pm-check selected" id="chkByProduct"><input type="checkbox" value="byProduct" checked onchange="togglePrintCheck(this, 'chkByProduct')"><span>📦</span><span>Por Produto</span></label>
                     <label class="pm-check selected" id="chkByType"><input type="checkbox" value="byType" checked onchange="togglePrintCheck(this, 'chkByType')"><span>🧪</span><span>Por Tipo de Ensaio</span></label>
-                    <label class="pm-check selected" id="chkByExecutor"><input type="checkbox" value="byExecutor" checked onchange="togglePrintCheck(this, 'chkByExecutor')"><span>👤</span><span>Por Executante</span></label>
                     <label class="pm-check selected" id="chkAllTests"><input type="checkbox" value="allTests" checked onchange="togglePrintCheck(this, 'chkAllTests')"><span>📋</span><span>Tabela de Ensaios</span></label>
-                    <label class="pm-check" id="chkProducts"><input type="checkbox" value="products" onchange="togglePrintCheck(this, 'chkProducts')"><span>🗂️</span><span>Catálogo Produtos</span></label>
                 </div>
-            </div>
-            <div class="pm-section">
-                <div class="pm-section-label">Observações do Relatório</div>
-                <input type="text" id="printObs" placeholder="Ex: Relatório mensal para reunião de qualidade..." style="width:100%;">
             </div>
         </div>
         <div class="pm-footer">
@@ -925,10 +640,17 @@ const app = initializeApp(firebaseConfig);
 
 <script>
 // ────────────────────────────────────────────────────────────
-// WAIT FOR FIREBASE TO LOAD
+// GLOBALS
 // ────────────────────────────────────────────────────────────
-let _fb;
+let products = [];
+let tests    = [];
+let trendChart, gaugeChart, productChart, typeChart;
+let unsubProducts = null, unsubTests = null;
+let _fb = null;
 
+// ────────────────────────────────────────────────────────────
+// WAIT FOR FIREBASE
+// ────────────────────────────────────────────────────────────
 function waitForFirebase(cb) {
     if (window._fb) { _fb = window._fb; cb(); }
     else setTimeout(() => waitForFirebase(cb), 50);
@@ -937,138 +659,31 @@ function waitForFirebase(cb) {
 waitForFirebase(initApp);
 
 // ────────────────────────────────────────────────────────────
-// GLOBALS
-// ────────────────────────────────────────────────────────────
-let products = [];
-let tests    = [];
-let currentUser = null;
-let trendChart, gaugeChart, productChart, typeChart;
-let unsubProducts = null, unsubTests = null;
-
-// ────────────────────────────────────────────────────────────
 // INIT
 // ────────────────────────────────────────────────────────────
-function initApp() {
-    const { auth, onAuthStateChanged } = _fb;
-
+async function initApp() {
     const t = localStorage.getItem('qa_theme') || 'dark';
     applyTheme(t);
-
-    onAuthStateChanged(auth, user => {
-        if (user) {
-            currentUser = user;
-            showApp(user);
-        } else {
-            currentUser = null;
-            showAuth();
-        }
-        hideLoading();
-    });
-
-    // Enter key support for auth forms
-    document.getElementById('loginPassword').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
-    document.getElementById('regPassword').addEventListener('keydown',   e => { if (e.key === 'Enter') doRegister(); });
+    
+    // Initialize anonymous auth
+    try {
+        await _fb.initAnonymousAuth();
+        console.log("Firebase initialized with anonymous auth");
+    } catch(e) {
+        console.warn("Anonymous auth failed, continuing in read-only mode:", e);
+    }
+    
+    // Start listeners
+    startListeners();
+    
+    // Hide loading after initial data load
+    setTimeout(() => hideLoading(), 1000);
 }
 
 function hideLoading() {
     const el = document.getElementById('loadingOverlay');
     el.classList.add('hidden');
     setTimeout(() => el.style.display = 'none', 350);
-}
-
-// ────────────────────────────────────────────────────────────
-// AUTH UI
-// ────────────────────────────────────────────────────────────
-function showAuth() {
-    document.getElementById('authScreen').style.display = 'flex';
-    document.getElementById('appScreen').style.display  = 'none';
-    if (unsubProducts) { unsubProducts(); unsubProducts = null; }
-    if (unsubTests)    { unsubTests();    unsubTests    = null; }
-}
-
-function showApp(user) {
-    document.getElementById('authScreen').style.display = 'none';
-    document.getElementById('appScreen').style.display  = 'block';
-
-    // update user badge
-    const name  = user.displayName || user.email.split('@')[0];
-    const email = user.email;
-    const initials = name.slice(0,2).toUpperCase();
-    document.getElementById('userName').textContent   = name;
-    document.getElementById('userEmail').textContent  = email;
-    document.getElementById('userAvatar').textContent = initials;
-
-    // start Firestore listeners
-    startListeners();
-}
-
-function switchAuthTab(tab) {
-    document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (i===0) === (tab==='login')));
-    document.getElementById('loginForm').classList.toggle('active', tab === 'login');
-    document.getElementById('registerForm').classList.toggle('active', tab === 'register');
-    document.getElementById('loginError').style.display    = 'none';
-    document.getElementById('registerError').style.display = 'none';
-}
-
-// ── Error messages in Portuguese ──
-function fbErrorMsg(code) {
-    const msgs = {
-        'auth/invalid-email':        'E-mail inválido.',
-        'auth/user-disabled':        'Usuário desabilitado.',
-        'auth/user-not-found':       'Usuário não encontrado.',
-        'auth/wrong-password':       'Senha incorreta.',
-        'auth/email-already-in-use': 'E-mail já cadastrado.',
-        'auth/weak-password':        'Senha deve ter pelo menos 6 caracteres.',
-        'auth/too-many-requests':    'Muitas tentativas. Tente mais tarde.',
-        'auth/invalid-credential':   'Credenciais inválidas. Verifique e-mail e senha.',
-        'auth/network-request-failed': 'Falha de rede. Verifique sua conexão.',
-        'auth/configuration-not-found': '⚠️ Firebase não configurado. Substitua as credenciais no código.',
-    };
-    return msgs[code] || 'Erro inesperado: ' + code;
-}
-
-async function doLogin() {
-    const { auth, signInWithEmailAndPassword } = _fb;
-    const email = document.getElementById('loginEmail').value.trim();
-    const pass  = document.getElementById('loginPassword').value;
-    const errEl = document.getElementById('loginError');
-
-    errEl.style.display = 'none';
-    if (!email || !pass) { errEl.textContent = 'Preencha todos os campos.'; errEl.style.display = 'block'; return; }
-
-    try {
-        await signInWithEmailAndPassword(auth, email, pass);
-    } catch(e) {
-        errEl.textContent = fbErrorMsg(e.code);
-        errEl.style.display = 'block';
-    }
-}
-
-async function doRegister() {
-    const { auth, createUserWithEmailAndPassword, updateProfile } = _fb;
-    const name  = document.getElementById('regName').value.trim();
-    const email = document.getElementById('regEmail').value.trim();
-    const pass  = document.getElementById('regPassword').value;
-    const errEl = document.getElementById('registerError');
-
-    errEl.style.display = 'none';
-    if (!name || !email || !pass) { errEl.textContent = 'Preencha todos os campos.'; errEl.style.display = 'block'; return; }
-
-    try {
-        const cred = await createUserWithEmailAndPassword(auth, email, pass);
-        await updateProfile(cred.user, { displayName: name });
-        toast('Conta criada com sucesso!');
-    } catch(e) {
-        errEl.textContent = fbErrorMsg(e.code);
-        errEl.style.display = 'block';
-    }
-}
-
-async function doLogout() {
-    const { auth, signOut } = _fb;
-    await signOut(auth);
-    products = []; tests = [];
-    toast('Até logo!');
 }
 
 // ────────────────────────────────────────────────────────────
@@ -1086,16 +701,17 @@ function startListeners() {
             updateFilterOptions();
             updateDashboard();
 
-            // also refresh test product selector if modal is open
             const sel = document.getElementById('testProduct');
-            const cur = sel.value;
-            while (sel.options.length > 1) sel.remove(1);
-            products.forEach(p => sel.add(new Option(p.pn + ' — ' + p.description + ' (' + p.unit + ')', p.id)));
-            if (cur) sel.value = cur;
+            if (sel) {
+                const cur = sel.value;
+                while (sel.options.length > 1) sel.remove(1);
+                products.forEach(p => sel.add(new Option(p.pn + ' — ' + p.description + ' (' + p.unit + ')', p.id)));
+                if (cur && [...sel.options].some(o => o.value === cur)) sel.value = cur;
+            }
         },
         err => {
-            if (err.code === 'permission-denied') toast('Sem permissão no Firestore. Configure as regras de segurança.', 'error');
-            else toast('Erro ao carregar produtos: ' + err.message, 'error');
+            console.error("Products listener error:", err);
+            toast('Erro ao carregar produtos: ' + err.message, 'error');
         }
     );
 
@@ -1109,6 +725,7 @@ function startListeners() {
             updateDashboard();
         },
         err => {
+            console.error("Tests listener error:", err);
             if (err.code !== 'permission-denied')
                 toast('Erro ao carregar ensaios: ' + err.message, 'error');
         }
@@ -1121,8 +738,10 @@ function startListeners() {
 function applyTheme(t) {
     document.body.setAttribute('data-theme', t);
     localStorage.setItem('qa_theme', t);
-    document.getElementById('themeIcon').textContent  = t === 'dark' ? '☀️' : '🌙';
-    document.getElementById('themeLabel').textContent = t === 'dark' ? 'Tema Claro' : 'Tema Escuro';
+    const themeIcon = document.getElementById('themeIcon');
+    const themeLabel = document.getElementById('themeLabel');
+    if (themeIcon) themeIcon.textContent = t === 'dark' ? '☀️' : '🌙';
+    if (themeLabel) themeLabel.textContent = t === 'dark' ? 'Tema Claro' : 'Tema Escuro';
 }
 
 function toggleTheme() {
@@ -1141,7 +760,8 @@ function showSection(id, el) {
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     document.getElementById(id).classList.add('active');
     if (el) el.classList.add('active');
-    document.getElementById('topbarTitle').textContent = sectionTitles[id];
+    const titleEl = document.getElementById('topbarTitle');
+    if (titleEl) titleEl.textContent = sectionTitles[id];
     if (id === 'dashboard') updateDashboard();
     if (id === 'products')  renderProducts();
     if (id === 'tests')     renderTests();
@@ -1154,6 +774,7 @@ function updateFilterOptions() {
     const pf = document.getElementById('productFilter');
     const tf = document.getElementById('testTypeFilter');
     const ef = document.getElementById('executorFilter');
+    if (!pf || !tf || !ef) return;
 
     [pf, tf, ef].forEach(s => { while(s.options.length > 1) s.remove(1); });
 
@@ -1165,18 +786,22 @@ function updateFilterOptions() {
 }
 
 function resetFilters() {
-    document.getElementById('periodFilter').value   = '30';
-    document.getElementById('productFilter').value  = 'all';
-    document.getElementById('testTypeFilter').value = 'all';
-    document.getElementById('executorFilter').value = 'all';
+    const period = document.getElementById('periodFilter');
+    const product = document.getElementById('productFilter');
+    const testType = document.getElementById('testTypeFilter');
+    const executor = document.getElementById('executorFilter');
+    if (period) period.value = '30';
+    if (product) product.value = 'all';
+    if (testType) testType.value = 'all';
+    if (executor) executor.value = 'all';
     updateDashboard();
 }
 
 function getFilteredTests() {
-    const period = document.getElementById('periodFilter').value;
-    const prodF  = document.getElementById('productFilter').value;
-    const typeF  = document.getElementById('testTypeFilter').value;
-    const execF  = document.getElementById('executorFilter').value;
+    const period = document.getElementById('periodFilter')?.value || '30';
+    const prodF  = document.getElementById('productFilter')?.value || 'all';
+    const typeF  = document.getElementById('testTypeFilter')?.value || 'all';
+    const execF  = document.getElementById('executorFilter')?.value || 'all';
     let f = [...tests];
     if (period !== 'all') {
         const cut = new Date(); cut.setDate(cut.getDate() - parseInt(period));
@@ -1193,9 +818,13 @@ function getFilteredTests() {
 // ────────────────────────────────────────────────────────────
 function updateDashboard() {
     const f = getFilteredTests();
-    renderKPIs(f); renderTrendChart(f); renderGaugeChart(f);
-    renderProductChart(f); renderTypeChart(f);
-    renderRejectedList(f); renderRecentList(f);
+    renderKPIs(f);
+    renderTrendChart(f);
+    renderGaugeChart(f);
+    renderProductChart(f);
+    renderTypeChart(f);
+    renderRejectedList(f);
+    renderRecentList(f);
 }
 
 function isDark() { return document.body.getAttribute('data-theme') === 'dark'; }
@@ -1222,7 +851,8 @@ function renderKPIs(f) {
         { label:'Executantes',    value:execs,        color:'c-primary', icon:'👤' },
         { label:'Duração Média',  value:avgDur+'min', color:'c-warning', icon:'⏱' },
     ];
-    document.getElementById('kpiGrid').innerHTML = kpis.map(k => `
+    const grid = document.getElementById('kpiGrid');
+    if (grid) grid.innerHTML = kpis.map(k => `
         <div class="kpi-card ${k.color}">
             <div class="kpi-label">${k.label}</div>
             <div class="kpi-value ${k.color}">${k.value}</div>
@@ -1231,8 +861,9 @@ function renderKPIs(f) {
 }
 
 function renderTrendChart(f) {
-    const ctx  = document.getElementById('trendChart').getContext('2d');
-    const days = parseInt(document.getElementById('periodFilter').value) || 30;
+    const ctx = document.getElementById('trendChart')?.getContext('2d');
+    if (!ctx) return;
+    const days = parseInt(document.getElementById('periodFilter')?.value) || 30;
     const cc   = chartColors();
     const dates = [], approved = [], rejected = [];
     for (let i = days-1; i >= 0; i--) {
@@ -1258,13 +889,17 @@ function renderTrendChart(f) {
 }
 
 function renderGaugeChart(f) {
-    const ctx      = document.getElementById('gaugeChart').getContext('2d');
+    const ctx = document.getElementById('gaugeChart')?.getContext('2d');
+    if (!ctx) return;
     const total    = f.length;
     const approved = f.filter(t => t.status === 'Aprovado').length;
     const rate     = total ? Math.round(approved/total*100) : 0;
-    document.getElementById('gaugeValue').textContent    = rate+'%';
-    document.getElementById('gaugeApproved').textContent = approved;
-    document.getElementById('gaugeRejected').textContent = total - approved;
+    const gaugeVal = document.getElementById('gaugeValue');
+    const gaugeApp = document.getElementById('gaugeApproved');
+    const gaugeRej = document.getElementById('gaugeRejected');
+    if (gaugeVal) gaugeVal.textContent = rate+'%';
+    if (gaugeApp) gaugeApp.textContent = approved;
+    if (gaugeRej) gaugeRej.textContent = total - approved;
     if (gaugeChart) gaugeChart.destroy();
     gaugeChart = new Chart(ctx, {
         type:'doughnut',
@@ -1274,8 +909,9 @@ function renderGaugeChart(f) {
 }
 
 function renderProductChart(f) {
-    const ctx = document.getElementById('productChart').getContext('2d');
-    const cc  = chartColors();
+    const ctx = document.getElementById('productChart')?.getContext('2d');
+    if (!ctx) return;
+    const cc = chartColors();
     const map = new Map();
     f.forEach(t => {
         const p = products.find(p => p.id === t.productId);
@@ -1300,7 +936,8 @@ function renderProductChart(f) {
 }
 
 function renderTypeChart(f) {
-    const ctx = document.getElementById('typeChart').getContext('2d');
+    const ctx = document.getElementById('typeChart')?.getContext('2d');
+    if (!ctx) return;
     const map = new Map();
     f.forEach(t => { const p = products.find(p => p.id === t.productId); if (!p) return; map.set(p.testType, (map.get(p.testType)||0)+1); });
     if (typeChart) typeChart.destroy();
@@ -1322,7 +959,8 @@ function renderRejectedList(f) {
         d.total++;
     });
     const list = [...map.entries()].filter(([,d]) => d.r > 0).sort((a,b) => b[1].r - a[1].r).slice(0,5);
-    const el   = document.getElementById('rejectedList');
+    const el = document.getElementById('rejectedList');
+    if (!el) return;
     if (!list.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">🎉</div><p>Sem reprovações no período</p></div>'; return; }
     el.innerHTML = list.map(([pn,d]) => {
         const pct = Math.round(d.r/d.total*100);
@@ -1332,7 +970,8 @@ function renderRejectedList(f) {
 
 function renderRecentList(f) {
     const recent = [...f].sort((a,b) => new Date(b.createdAt||b.date) - new Date(a.createdAt||a.date)).slice(0,5);
-    const el     = document.getElementById('recentList');
+    const el = document.getElementById('recentList');
+    if (!el) return;
     if (!recent.length) { el.innerHTML = '<div class="empty-state"><p>Sem ensaios no período</p></div>'; return; }
     el.innerHTML = recent.map(t => {
         const p = products.find(p => p.id === t.productId);
@@ -1359,6 +998,7 @@ function renderProducts() {
     const q  = (document.getElementById('productSearch')?.value||'').toLowerCase();
     const f  = products.filter(p => p.pn.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
     const tb = document.getElementById('productsTableBody');
+    if (!tb) return;
     tb.innerHTML = f.length ? f.map(p => `
         <tr>
             <td class="mono">${p.pn}</td>
@@ -1381,6 +1021,7 @@ function renderTests() {
         return p && (p.pn.toLowerCase().includes(q) || (t.requester||'').toLowerCase().includes(q) || t.executor.toLowerCase().includes(q));
     }).sort((a,b) => new Date(b.date) - new Date(a.date));
     const tb = document.getElementById('testsTableBody');
+    if (!tb) return;
     tb.innerHTML = f.length ? f.map(t => {
         const p = products.find(p => p.id === t.productId);
         return `<tr>
@@ -1401,42 +1042,51 @@ function renderTests() {
 }
 
 // ────────────────────────────────────────────────────────────
-// PRODUCT CRUD (Firestore)
+// PRODUCT CRUD
 // ────────────────────────────────────────────────────────────
 function openProductModal(id = null) {
-    document.getElementById('productForm').reset();
-    document.getElementById('productId').value = '';
-    document.getElementById('productModalTitle').textContent = 'Novo Produto';
+    const form = document.getElementById('productForm');
+    if (form) form.reset();
+    const idField = document.getElementById('productId');
+    if (idField) idField.value = '';
+    const title = document.getElementById('productModalTitle');
+    if (title) title.textContent = 'Novo Produto';
     if (id) {
         const p = products.find(p => p.id === id);
         if (p) {
-            document.getElementById('productModalTitle').textContent    = 'Editar Produto';
-            document.getElementById('productId').value          = p.id;
-            document.getElementById('productPn').value          = p.pn;
-            document.getElementById('productDescription').value = p.description;
-            document.getElementById('productTestType').value    = p.testType;
-            document.getElementById('productUnit').value        = p.unit||'';
-            document.getElementById('productSpec').value        = p.spec;
+            if (title) title.textContent = 'Editar Produto';
+            if (idField) idField.value = p.id;
+            const pn = document.getElementById('productPn');
+            const desc = document.getElementById('productDescription');
+            const type = document.getElementById('productTestType');
+            const unit = document.getElementById('productUnit');
+            const spec = document.getElementById('productSpec');
+            if (pn) pn.value = p.pn;
+            if (desc) desc.value = p.description;
+            if (type) type.value = p.testType;
+            if (unit) unit.value = p.unit || '';
+            if (spec) spec.value = p.spec;
         }
     }
-    document.getElementById('productModal').classList.add('open');
+    const modal = document.getElementById('productModal');
+    if (modal) modal.classList.add('open');
 }
 
 function editProduct(id) { openProductModal(id); }
-function closeModal(id)  { document.getElementById(id).classList.remove('open'); }
+function closeModal(id) { const el = document.getElementById(id); if (el) el.classList.remove('open'); }
 
 async function saveProduct(e) {
     e.preventDefault();
-    const { db, doc, setDoc, collection, serverTimestamp } = _fb;
-    const id   = document.getElementById('productId').value;
+    const { db, doc, setDoc, serverTimestamp } = _fb;
+    const id = document.getElementById('productId')?.value || '';
     const docId = id || ('prod-' + Date.now());
     const data = {
-        pn:          document.getElementById('productPn').value,
-        description: document.getElementById('productDescription').value,
-        testType:    document.getElementById('productTestType').value,
-        unit:        document.getElementById('productUnit').value,
-        spec:        document.getElementById('productSpec').value,
-        updatedAt:   serverTimestamp(),
+        pn: document.getElementById('productPn')?.value || '',
+        description: document.getElementById('productDescription')?.value || '',
+        testType: document.getElementById('productTestType')?.value || '',
+        unit: document.getElementById('productUnit')?.value || '',
+        spec: document.getElementById('productSpec')?.value || '',
+        updatedAt: serverTimestamp(),
     };
     if (!id) data.createdAt = serverTimestamp();
 
@@ -1444,7 +1094,6 @@ async function saveProduct(e) {
         await setDoc(doc(db, 'products', docId), data, { merge: true });
         closeModal('productModal');
         toast(id ? 'Produto atualizado!' : 'Produto criado!');
-        // Recalculate status for associated tests if spec changed
         if (id) await recalcStatusFirestore(id);
     } catch(err) {
         toast('Erro ao salvar: ' + err.message, 'error');
@@ -1468,7 +1117,6 @@ async function deleteProduct(id) {
     if (!confirm('Excluir produto? Os ensaios associados também serão excluídos.')) return;
     const { db, doc, deleteDoc } = _fb;
     try {
-        // Delete associated tests
         const related = tests.filter(t => t.productId === id);
         for (const t of related) await deleteDoc(doc(db, 'tests', t.id));
         await deleteDoc(doc(db, 'products', id));
@@ -1479,67 +1127,83 @@ async function deleteProduct(id) {
 }
 
 // ────────────────────────────────────────────────────────────
-// TEST CRUD (Firestore)
+// TEST CRUD
 // ────────────────────────────────────────────────────────────
 function openTestModal(id = null) {
-    document.getElementById('testForm').reset();
-    document.getElementById('testId').value = '';
-    document.getElementById('testSpecInfo').textContent = '';
-    document.getElementById('testModalTitle').textContent = 'Novo Ensaio';
+    const form = document.getElementById('testForm');
+    if (form) form.reset();
+    const specInfo = document.getElementById('testSpecInfo');
+    if (specInfo) specInfo.textContent = '';
+    const title = document.getElementById('testModalTitle');
+    if (title) title.textContent = 'Novo Ensaio';
 
     const sel = document.getElementById('testProduct');
-    while (sel.options.length > 1) sel.remove(1);
-    products.forEach(p => sel.add(new Option(p.pn + ' — ' + p.description + ' (' + p.unit + ')', p.id)));
+    if (sel) {
+        while (sel.options.length > 1) sel.remove(1);
+        products.forEach(p => sel.add(new Option(p.pn + ' — ' + p.description + ' (' + p.unit + ')', p.id)));
+    }
 
     if (id) {
         const t = tests.find(t => t.id === id);
         if (t) {
-            document.getElementById('testModalTitle').textContent = 'Editar Ensaio';
-            document.getElementById('testId').value        = t.id;
-            document.getElementById('testProduct').value   = t.productId;
-            document.getElementById('testDate').value      = t.date;
-            document.getElementById('testRequester').value = t.requester||'';
-            document.getElementById('testExecutor').value  = t.executor;
-            document.getElementById('testResult').value    = t.result;
-            document.getElementById('testStartTime').value = t.startTime;
-            document.getElementById('testEndTime').value   = t.endTime;
-            document.getElementById('testNotes').value     = t.notes||'';
+            if (title) title.textContent = 'Editar Ensaio';
+            const idField = document.getElementById('testId');
+            const prodSel = document.getElementById('testProduct');
+            const dateField = document.getElementById('testDate');
+            const requester = document.getElementById('testRequester');
+            const executor = document.getElementById('testExecutor');
+            const result = document.getElementById('testResult');
+            const start = document.getElementById('testStartTime');
+            const end = document.getElementById('testEndTime');
+            const notes = document.getElementById('testNotes');
+            if (idField) idField.value = t.id;
+            if (prodSel) prodSel.value = t.productId;
+            if (dateField) dateField.value = t.date;
+            if (requester) requester.value = t.requester || '';
+            if (executor) executor.value = t.executor;
+            if (result) result.value = t.result;
+            if (start) start.value = t.startTime;
+            if (end) end.value = t.endTime;
+            if (notes) notes.value = t.notes || '';
             updateTestSpecInfo();
         }
     } else {
-        document.getElementById('testDate').value = today();
+        const dateField = document.getElementById('testDate');
+        if (dateField) dateField.value = new Date().toISOString().split('T')[0];
     }
-    document.getElementById('testModal').classList.add('open');
+    const modal = document.getElementById('testModal');
+    if (modal) modal.classList.add('open');
 }
 
 function editTest(id) { openTestModal(id); }
 
 function updateTestSpecInfo() {
-    const pid = document.getElementById('testProduct').value;
-    const p   = products.find(p => p.id === pid);
-    document.getElementById('testSpecInfo').textContent = p ? `Especificação: ${p.spec} ${p.unit}` : '';
+    const pid = document.getElementById('testProduct')?.value;
+    const p = products.find(p => p.id === pid);
+    const info = document.getElementById('testSpecInfo');
+    if (info) info.textContent = p ? `Especificação: ${p.spec} ${p.unit}` : '';
 }
 
 async function saveTest(e) {
     e.preventDefault();
     const { db, doc, setDoc, serverTimestamp } = _fb;
-    const id        = document.getElementById('testId').value;
-    const productId = document.getElementById('testProduct').value;
-    const result    = parseFloat(document.getElementById('testResult').value);
-    const p         = products.find(p => p.id === productId);
+    const id = document.getElementById('testId')?.value || '';
+    const productId = document.getElementById('testProduct')?.value || '';
+    const result = parseFloat(document.getElementById('testResult')?.value || 0);
+    const p = products.find(p => p.id === productId);
     if (!p) { toast('Produto não encontrado!', 'error'); return; }
 
     const docId = id || ('test-' + Date.now());
-    const data  = {
+    const data = {
         productId,
-        date:      document.getElementById('testDate').value,
-        requester: document.getElementById('testRequester').value,
-        executor:  document.getElementById('testExecutor').value,
-        result:    result.toFixed(2),
-        status:    checkApproval(p, result) ? 'Aprovado' : 'Reprovado',
-        startTime: document.getElementById('testStartTime').value,
-        endTime:   document.getElementById('testEndTime').value,
-        notes:     document.getElementById('testNotes').value,
+        date: document.getElementById('testDate')?.value || '',
+        requester: document.getElementById('testRequester')?.value || '',
+        executor: document.getElementById('testExecutor')?.value || '',
+        result: result.toFixed(2),
+        status: checkApproval(p, result) ? 'Aprovado' : 'Reprovado',
+        startTime: document.getElementById('testStartTime')?.value || '',
+        endTime: document.getElementById('testEndTime')?.value || '',
+        notes: document.getElementById('testNotes')?.value || '',
         updatedAt: serverTimestamp(),
     };
     if (!id) data.createdAt = serverTimestamp();
@@ -1567,8 +1231,6 @@ async function deleteTest(id) {
 // ────────────────────────────────────────────────────────────
 // HELPERS
 // ────────────────────────────────────────────────────────────
-function today() { return new Date().toISOString().split('T')[0]; }
-
 function checkApproval(product, result) {
     if (!product?.spec) return false;
     const spec = product.spec.trim();
@@ -1585,16 +1247,18 @@ function checkApproval(product, result) {
 // PRINT MODAL
 // ────────────────────────────────────────────────────────────
 function openPrintModal() {
-    const pv = document.getElementById('periodFilter').value;
-    const lbl = { '7':'Últimos 7 dias','14':'Últimos 14 dias','30':'Últimos 30 dias','90':'Últimos 90 dias',all:'Todo período' };
-    document.getElementById('printPeriodInfo').textContent = lbl[pv] || pv;
-    document.getElementById('printModal').classList.add('open');
+    const modal = document.getElementById('printModal');
+    if (modal) modal.classList.add('open');
 }
 
-function closePrintModal() { document.getElementById('printModal').classList.remove('open'); }
+function closePrintModal() {
+    const modal = document.getElementById('printModal');
+    if (modal) modal.classList.remove('open');
+}
 
 function togglePrintCheck(input, labelId) {
-    document.getElementById(labelId).classList.toggle('selected', input.checked);
+    const label = document.getElementById(labelId);
+    if (label) label.classList.toggle('selected', input.checked);
 }
 
 function getPrintChecks() {
@@ -1605,19 +1269,18 @@ function getPrintChecks() {
 
 function executePrint() {
     const checked = getPrintChecks();
-    const f       = getFilteredTests();
-    const obs     = document.getElementById('printObs').value.trim();
-    const pv      = document.getElementById('periodFilter').value;
+    const f = getFilteredTests();
+    const periodVal = document.getElementById('periodFilter')?.value || '30';
     const periodLabels = { '7':'Últimos 7 dias','14':'Últimos 14 dias','30':'Últimos 30 dias','90':'Últimos 90 dias',all:'Todo período' };
-    const periodLabel  = periodLabels[pv] || pv;
-    const now      = new Date();
-    const dateStr  = now.toLocaleDateString('pt-BR', {day:'2-digit',month:'long',year:'numeric'});
-    const timeStr  = now.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+    const periodLabel = periodLabels[periodVal] || periodVal;
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('pt-BR', {day:'2-digit',month:'long',year:'numeric'});
+    const timeStr = now.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
 
-    const total    = f.length;
+    const total = f.length;
     const approved = f.filter(t => t.status === 'Aprovado').length;
     const rejected = total - approved;
-    const rate     = total ? (approved/total*100).toFixed(1) : '0.0';
+    const rate = total ? (approved/total*100).toFixed(1) : '0.0';
 
     const byProduct = new Map();
     f.forEach(t => {
@@ -1629,9 +1292,6 @@ function executePrint() {
 
     const byType = new Map();
     f.forEach(t => { const p = products.find(p => p.id === t.productId); if (!p) return; byType.set(p.testType,(byType.get(p.testType)||0)+1); });
-
-    const byExec = new Map();
-    f.forEach(t => { if (!byExec.has(t.executor)) byExec.set(t.executor,{a:0,r:0}); const d=byExec.get(t.executor); t.status==='Aprovado'?d.a++:d.r++; });
 
     const css = `
         *{margin:0;padding:0;box-sizing:border-box;}
@@ -1650,16 +1310,14 @@ function executePrint() {
         table{width:100%;border-collapse:collapse;font-size:10px;margin-top:8px;}
         th{background:#f4f6fb;color:#4a5f80;text-transform:uppercase;letter-spacing:0.06em;font-size:9px;padding:7px 8px;text-align:left;border-bottom:2px solid #dde4f0;}
         td{padding:6px 8px;border-bottom:1px solid #f0f4fb;color:#2a3a5a;}
-        tr:nth-child(even) td{background:#f9fbff;}
         .badge{display:inline-block;padding:1px 7px;border-radius:4px;font-weight:600;font-size:9px;}
-        .badge-ok{background:#d1fae5;color:#059669;} .badge-err{background:#fee2e2;color:#dc2626;} .badge-type{background:#dbeafe;color:#2563eb;}
+        .badge-ok{background:#d1fae5;color:#059669;} .badge-err{background:#fee2e2;color:#dc2626;}
         .approval-big{font-size:40px;font-weight:800;color:#0ea573;} .approval-sub{font-size:10px;color:#8096b8;}
-        .obs-box{background:#f4f6fb;border-left:3px solid #2563eb;padding:10px 14px;border-radius:4px;font-size:10px;color:#4a5f80;margin-top:6px;}
         .footer{margin-top:28px;padding-top:14px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;font-size:9px;color:#aabbd0;}
         @media print{.page{padding:16px;}}`;
 
     let html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Relatório QA — Rochling</title><style>${css}</style></head><body><div class="page">`;
-    html += `<div class="header"><div><div class="logo">Rochling <span>Automotive</span></div><div class="meta">Relatório de Qualidade — Gestão de Ensaios</div><div class="meta">Período: ${periodLabel} | Gerado em ${dateStr} às ${timeStr}</div>${obs?`<div class="obs-box">📝 ${obs}</div>`:''}</div><div style="text-align:right;"><div style="font-size:11px;color:#8096b8;">Rochling Automotive</div><div style="font-size:10px;color:#aabbd0;">Sistema QA · Ensaios</div></div></div>`;
+    html += `<div class="header"><div><div class="logo">Rochling <span>Automotive</span></div><div class="meta">Relatório de Qualidade — Gestão de Ensaios</div><div class="meta">Período: ${periodLabel} | Gerado em ${dateStr} às ${timeStr}</div></div><div style="text-align:right;"><div style="font-size:11px;color:#8096b8;">Rochling Automotive</div><div style="font-size:10px;color:#aabbd0;">Sistema QA · Ensaios</div></div></div>`;
 
     if (checked.has('kpi')) html += `<div class="section"><h2>Indicadores de Performance (KPI)</h2><div class="kpi-row"><div class="kpi"><div class="kpi-val">${total}</div><div class="kpi-lbl">Total Ensaios</div></div><div class="kpi success"><div class="kpi-val">${approved}</div><div class="kpi-lbl">Aprovados</div></div><div class="kpi danger"><div class="kpi-val">${rejected}</div><div class="kpi-lbl">Reprovados</div></div><div class="kpi accent"><div class="kpi-val">${rate}%</div><div class="kpi-lbl">Taxa Aprovação</div></div><div class="kpi"><div class="kpi-val">${new Set(f.map(t=>t.executor)).size}</div><div class="kpi-lbl">Executantes</div></div><div class="kpi"><div class="kpi-val">${products.length}</div><div class="kpi-lbl">Produtos</div></div></div></div>`;
 
@@ -1675,22 +1333,22 @@ function executePrint() {
         html += `<div class="section"><h2>Resumo por Produto (PN)</h2><table><thead><tr><th>PN</th><th>Descrição</th><th>Aprovados</th><th>Reprovados</th><th>Total</th><th>% Aprovação</th></tr></thead><tbody>${sorted.map(([pn,d])=>`<tr><td><b>${pn}</b></td><td>${d.desc}</td><td>${d.a}</td><td>${d.r}</td><td>${d.a+d.r}</td><td><span class="badge ${d.r===0?'badge-ok':'badge-err'}">${Math.round(d.a/(d.a+d.r)*100)}%</span></td></tr>`).join('')}</tbody></table></div>`;
     }
 
-    if (checked.has('byType')) html += `<div class="section"><h2>Resumo por Tipo de Ensaio</h2><table><thead><tr><th>Tipo de Ensaio</th><th>Quantidade</th><th>% do Total</th></tr></thead><tbody>${[...byType.entries()].sort((a,b)=>b[1]-a[1]).map(([type,count])=>`<tr><td><span class="badge badge-type">${type}</span></td><td>${count}</td><td>${total?Math.round(count/total*100):0}%</td></tr>`).join('')}</tbody></table></div>`;
-
-    if (checked.has('byExecutor')) html += `<div class="section"><h2>Resumo por Executante</h2><table><thead><tr><th>Executante</th><th>Aprovados</th><th>Reprovados</th><th>Total</th><th>Taxa Aprovação</th></tr></thead><tbody>${[...byExec.entries()].sort((a,b)=>(b[1].a+b[1].r)-(a[1].a+a[1].r)).map(([exec,d])=>`<tr><td>${exec}</td><td>${d.a}</td><td>${d.r}</td><td>${d.a+d.r}</td><td><span class="badge ${d.r===0?'badge-ok':'badge-err'}">${Math.round(d.a/(d.a+d.r)*100)}%</span></td></tr>`).join('')}</tbody></table></div>`;
+    if (checked.has('byType')) html += `<div class="section"><h2>Resumo por Tipo de Ensaio</h2><td><thead><tr><th>Tipo de Ensaio</th><th>Quantidade</th><th>% do Total</th></tr></thead><tbody>${[...byType.entries()].sort((a,b)=>b[1]-a[1]).map(([type,count])=>`<td><td><b>${type}</b></td><td>${count}</td><td>${total?Math.round(count/total*100):0}%</td></tr>`).join('')}</tbody></table></div>`;
 
     if (checked.has('allTests')) {
         const sorted = [...f].sort((a,b) => new Date(b.date) - new Date(a.date));
         html += `<div class="section" style="page-break-before:always;"><h2>Tabela Completa de Ensaios (${sorted.length} registros)</h2><table><thead><tr><th>Data</th><th>PN</th><th>Tipo</th><th>Especificação</th><th>Solicitante</th><th>Executante</th><th>Início</th><th>Fim</th><th>Resultado</th><th>Status</th></tr></thead><tbody>${sorted.map(t=>{ const p=products.find(p=>p.id===t.productId); return `<tr><td>${t.date}</td><td><b>${p?.pn||'—'}</b></td><td>${p?.testType||'—'}</td><td>${p?.spec||'—'} ${p?.unit||''}</td><td>${t.requester||'—'}</td><td>${t.executor}</td><td>${t.startTime}</td><td>${t.endTime}</td><td><b>${t.result} ${p?.unit||''}</b></td><td><span class="badge ${t.status==='Aprovado'?'badge-ok':'badge-err'}">${t.status}</span></td></tr>`; }).join('')}</tbody></table></div>`;
     }
 
-    if (checked.has('products')) html += `<div class="section" style="page-break-before:always;"><h2>Catálogo de Produtos</h2><table><thead><tr><th>PN</th><th>Descrição</th><th>Tipo de Ensaio</th><th>Unidade</th><th>Especificação</th></tr></thead><tbody>${products.map(p=>`<tr><td><b>${p.pn}</b></td><td>${p.description}</td><td><span class="badge badge-type">${p.testType}</span></td><td>${p.unit||'—'}</td><td><b>${p.spec} ${p.unit||''}</b></td></tr>`).join('')}</tbody></table></div>`;
-
     html += `<div class="footer"><span>Rochling Automotive — Sistema de Gestão de Ensaios QA</span><span>Emitido em ${dateStr} | ${timeStr}</span></div></div></body></html>`;
 
     const w = window.open('', '_blank', 'width=1000,height=800');
-    w.document.write(html); w.document.close(); w.focus();
-    setTimeout(() => w.print(), 600);
+    if (w) {
+        w.document.write(html);
+        w.document.close();
+        w.focus();
+        setTimeout(() => w.print(), 600);
+    }
     closePrintModal();
     toast('Relatório gerado!');
 }
@@ -1708,7 +1366,7 @@ function exportCSV() {
     const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'ensaios_' + today() + '.csv';
+    a.download = 'ensaios_' + new Date().toISOString().split('T')[0] + '.csv';
     a.click();
     toast('CSV exportado!');
 }
@@ -1718,11 +1376,12 @@ function exportCSV() {
 // ────────────────────────────────────────────────────────────
 function toast(msg, type='success') {
     const area = document.getElementById('toastArea');
-    const el   = document.createElement('div');
+    if (!area) return;
+    const el = document.createElement('div');
     el.className = 'toast toast-' + type;
     el.innerHTML = `<span>${type==='success'?'✓':'✕'}</span><span>${msg}</span>`;
     area.appendChild(el);
-    setTimeout(() => { el.style.opacity='0'; el.style.transform='translateX(60px)'; el.style.transition='all 0.2s'; setTimeout(()=>el.remove(),220); }, 3500);
+    setTimeout(() => { el.style.opacity='0'; el.style.transform='translateX(60px)'; setTimeout(()=>el.remove(),220); }, 3500);
 }
 
 // Close modals on outside click
