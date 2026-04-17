@@ -1,2048 +1,2176 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Röchling Automotive — QA Ensaios</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rochling Automotive — QA Ensaios</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-<!-- Firebase SDKs -->
-<script type="module">
-  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-  import { getFirestore, collection, doc, getDocs, setDoc, deleteDoc, onSnapshot, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-  import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        :root {
+            --bg: #0a0d12;
+            --surface: #111620;
+            --surface2: #181f2d;
+            --border: #1e2a3a;
+            --border2: #243040;
+            --muted: #3a4a60;
+            --muted-fg: #6b7fa0;
+            --fg: #e8f0ff;
+            --fg2: #b0bfd8;
+            --primary: #4d9eff;
+            --primary-dim: rgba(77,158,255,0.12);
+            --success: #22d3a0;
+            --success-dim: rgba(34,211,160,0.12);
+            --danger: #ff5a6e;
+            --danger-dim: rgba(255,90,110,0.12);
+            --warning: #ffb740;
+            --warning-dim: rgba(255,183,64,0.12);
+            --accent: #a78bfa;
+            --accent-dim: rgba(167,139,250,0.12);
+            --font-display: 'Syne', sans-serif;
+            --font-body: 'DM Sans', sans-serif;
+            --font-mono: 'DM Mono', monospace;
+            --radius: 10px;
+            --radius-lg: 16px;
+            --shadow: 0 4px 24px rgba(0,0,0,0.4);
+        }
 
-  // ── CONFIG: substitua pelos seus dados do Firebase Console ──
-  const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
-  };
+        [data-theme="light"] {
+            --bg: #f0f4fb;
+            --surface: #ffffff;
+            --surface2: #f7f9fc;
+            --border: #dde4f0;
+            --border2: #c8d4e8;
+            --muted: #c0cce0;
+            --muted-fg: #7a8faa;
+            --fg: #0d1626;
+            --fg2: #3a4f6a;
+            --primary: #2563eb;
+            --primary-dim: rgba(37,99,235,0.10);
+            --success: #0ea573;
+            --success-dim: rgba(14,165,115,0.10);
+            --danger: #e53e55;
+            --danger-dim: rgba(229,62,85,0.10);
+            --warning: #d97706;
+            --warning-dim: rgba(217,119,6,0.10);
+            --accent: #7c3aed;
+            --accent-dim: rgba(124,58,237,0.10);
+            --shadow: 0 4px 24px rgba(0,0,0,0.08);
+        }
 
-  let app, db, auth, useFirebase = false;
+        body {
+            font-family: var(--font-body);
+            background: var(--bg);
+            color: var(--fg);
+            min-height: 100vh;
+            line-height: 1.5;
+            transition: background 0.3s, color 0.3s;
+        }
 
-  try {
-    if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
-      app = initializeApp(firebaseConfig);
-      db = getFirestore(app);
-      auth = getAuth(app);
-      useFirebase = true;
-      window.__firebase = { db, auth, collection, doc, getDocs, setDoc, deleteDoc, onSnapshot, serverTimestamp, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged };
-      window.__useFirebase = true;
-      console.log('[Firebase] Conectado com sucesso');
-    } else {
-      console.log('[Firebase] Config padrão — usando localStorage');
-    }
-  } catch(e) {
-    console.warn('[Firebase] Falha na inicialização, usando localStorage', e);
-  }
-</script>
+        /* ── LAYOUT ── */
+        .layout { display: flex; min-height: 100vh; }
 
-<style>
-:root {
-  --bg: #060b14;
-  --surface: #0d1525;
-  --surface2: #111d33;
-  --border: rgba(255,255,255,0.07);
-  --border2: rgba(255,255,255,0.12);
-  --text: #e8edf5;
-  --text2: #8899b4;
-  --text3: #4a5f7a;
-  --accent: #2563eb;
-  --accent2: #3b82f6;
-  --accent-glow: rgba(37,99,235,0.35);
-  --green: #10b981;
-  --green-dim: rgba(16,185,129,0.15);
-  --red: #ef4444;
-  --red-dim: rgba(239,68,68,0.15);
-  --amber: #f59e0b;
-  --amber-dim: rgba(245,158,11,0.12);
-  --purple: #8b5cf6;
-  --radius: 10px;
-  --font-display: 'Syne', sans-serif;
-  --font-body: 'DM Sans', sans-serif;
-  --font-mono: 'DM Mono', monospace;
-  --transition: 0.22s cubic-bezier(.4,0,.2,1);
-}
-[data-theme="light"] {
-  --bg: #f0f4fa;
-  --surface: #ffffff;
-  --surface2: #f8fafd;
-  --border: rgba(0,0,0,0.07);
-  --border2: rgba(0,0,0,0.12);
-  --text: #0d1525;
-  --text2: #4a5f7a;
-  --text3: #8899b4;
-  --accent-glow: rgba(37,99,235,0.15);
-}
+        /* ── SIDEBAR ── */
+        .sidebar {
+            width: 220px;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            z-index: 100;
+            transition: background 0.3s;
+        }
 
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        .logo {
+            padding: 24px 20px 20px;
+            border-bottom: 1px solid var(--border);
+        }
 
-html{scroll-behavior:smooth}
+        .logo-text {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 1.1rem;
+            color: var(--fg);
+            line-height: 1.2;
+        }
 
-body{
-  font-family:var(--font-body);
-  background:var(--bg);
-  color:var(--text);
-  min-height:100vh;
-  font-size:14px;
-  line-height:1.6;
-  -webkit-font-smoothing:antialiased;
-  background-image: radial-gradient(ellipse 80% 40% at 50% -10%, rgba(37,99,235,0.12) 0%, transparent 60%);
-}
+        .logo-sub {
+            font-size: 0.7rem;
+            color: var(--muted-fg);
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-top: 4px;
+        }
 
-/* ── SCROLLBAR ── */
-::-webkit-scrollbar{width:5px;height:5px}
-::-webkit-scrollbar-track{background:var(--bg)}
-::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+        .nav { flex: 1; padding: 16px 12px; }
 
-/* ── LAYOUT ── */
-.app-shell{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+        .nav-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--muted-fg);
+            font-family: var(--font-mono);
+            padding: 0 8px;
+            margin-bottom: 8px;
+            margin-top: 16px;
+        }
 
-/* ── SIDEBAR ── */
-.sidebar{
-  background:var(--surface);
-  border-right:1px solid var(--border);
-  display:flex;
-  flex-direction:column;
-  position:fixed;
-  top:0;left:0;bottom:0;
-  width:240px;
-  z-index:100;
-  overflow-y:auto;
-}
-.sidebar-logo{
-  padding:24px 20px 20px;
-  border-bottom:1px solid var(--border);
-}
-.sidebar-logo-mark{
-  font-family:var(--font-display);
-  font-size:18px;
-  font-weight:800;
-  letter-spacing:-0.03em;
-  color:var(--text);
-  line-height:1.1;
-}
-.sidebar-logo-mark span{color:var(--accent2)}
-.sidebar-logo-sub{
-  font-size:10px;
-  color:var(--text3);
-  text-transform:uppercase;
-  letter-spacing:0.15em;
-  margin-top:4px;
-}
-.sidebar-nav{padding:16px 12px;flex:1}
-.nav-section-label{
-  font-size:9px;
-  font-weight:600;
-  letter-spacing:0.2em;
-  text-transform:uppercase;
-  color:var(--text3);
-  padding:8px 8px 6px;
-  margin-top:8px;
-}
-.nav-item{
-  display:flex;align-items:center;gap:10px;
-  padding:9px 10px;
-  border-radius:8px;
-  cursor:pointer;
-  color:var(--text2);
-  font-size:13px;
-  font-weight:500;
-  transition:var(--transition);
-  border:none;background:none;width:100%;text-align:left;
-  margin-bottom:2px;
-}
-.nav-item:hover{color:var(--text);background:rgba(255,255,255,0.05)}
-.nav-item.active{
-  color:var(--text);
-  background:linear-gradient(135deg,rgba(37,99,235,0.25),rgba(59,130,246,0.1));
-  border:1px solid rgba(37,99,235,0.3);
-}
-.nav-item .nav-icon{
-  width:30px;height:30px;display:flex;align-items:center;justify-content:center;
-  border-radius:7px;font-size:14px;flex-shrink:0;
-}
-.nav-item.active .nav-icon{background:rgba(37,99,235,0.3)}
+        .nav-label:first-child { margin-top: 0; }
 
-.sidebar-footer{
-  padding:16px 12px;
-  border-top:1px solid var(--border);
-}
-.sync-status{
-  display:flex;align-items:center;gap:8px;
-  padding:8px 10px;
-  border-radius:8px;
-  background:var(--surface2);
-  font-size:11px;
-  color:var(--text2);
-}
-.sync-dot{
-  width:6px;height:6px;border-radius:50%;
-  background:var(--green);
-  box-shadow:0 0 6px var(--green);
-  flex-shrink:0;
-}
-.sync-dot.offline{background:var(--text3);box-shadow:none}
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 12px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--muted-fg);
+            border: none;
+            background: transparent;
+            width: 100%;
+            text-align: left;
+            transition: all 0.15s;
+            margin-bottom: 2px;
+        }
 
-/* ── MAIN ── */
-.main-content{
-  margin-left:240px;
-  flex:1;
-  min-height:100vh;
-  display:flex;flex-direction:column;
-}
+        .nav-item:hover { color: var(--fg); background: var(--surface2); }
 
-/* ── TOPBAR ── */
-.topbar{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:14px 28px;
-  border-bottom:1px solid var(--border);
-  background:rgba(var(--surface),0.8);
-  backdrop-filter:blur(12px);
-  position:sticky;top:0;z-index:50;
-  gap:16px;
-}
-.topbar-left{display:flex;align-items:center;gap:16px}
-.page-title{
-  font-family:var(--font-display);
-  font-size:20px;
-  font-weight:700;
-  letter-spacing:-0.02em;
-}
-.page-subtitle{font-size:12px;color:var(--text3);margin-top:1px}
-.topbar-right{display:flex;align-items:center;gap:10px}
+        .nav-item.active {
+            color: var(--primary);
+            background: var(--primary-dim);
+        }
 
-/* ── THEME TOGGLE ── */
-.theme-btn{
-  width:32px;height:32px;
-  border-radius:8px;
-  border:1px solid var(--border2);
-  background:var(--surface2);
-  color:var(--text2);
-  cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  font-size:14px;
-  transition:var(--transition);
-}
-.theme-btn:hover{color:var(--text);background:var(--surface)}
+        .nav-icon { font-size: 1rem; width: 20px; text-align: center; }
 
-/* ── BUTTONS ── */
-.btn{
-  display:inline-flex;align-items:center;gap:7px;
-  padding:8px 14px;
-  border-radius:8px;
-  border:1px solid var(--border2);
-  background:var(--surface2);
-  color:var(--text);
-  cursor:pointer;
-  font-family:var(--font-body);
-  font-size:12.5px;
-  font-weight:500;
-  transition:var(--transition);
-  white-space:nowrap;
-}
-.btn:hover{background:var(--surface);border-color:var(--border2);transform:translateY(-1px)}
-.btn-primary{
-  background:var(--accent);
-  border-color:var(--accent);
-  color:#fff;
-}
-.btn-primary:hover{background:#1d4ed8;border-color:#1d4ed8}
-.btn-ghost{background:transparent;border-color:transparent;color:var(--text2)}
-.btn-ghost:hover{background:rgba(255,255,255,0.06);color:var(--text)}
-.btn-danger{background:var(--red-dim);border-color:rgba(239,68,68,0.3);color:var(--red)}
-.btn-danger:hover{background:rgba(239,68,68,0.25)}
-.btn-sm{padding:5px 10px;font-size:11px;gap:5px}
-.btn-icon{padding:7px;min-width:32px;justify-content:center}
+        .sidebar-footer {
+            padding: 16px 12px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
 
-/* ── SECTION PAGES ── */
-.page{display:none;padding:24px 28px;flex:1}
-.page.active{display:block}
+        /* Theme toggle */
+        .theme-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            background: var(--surface2);
+            color: var(--muted-fg);
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-family: var(--font-body);
+            width: 100%;
+            transition: all 0.15s;
+        }
 
-/* ── CARDS ── */
-.card{
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  overflow:hidden;
-  transition:var(--transition);
-}
-.card:hover{border-color:var(--border2)}
-.card-head{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:16px 20px;
-  border-bottom:1px solid var(--border);
-  flex-wrap:wrap;gap:12px;
-}
-.card-title{
-  font-family:var(--font-display);
-  font-size:14px;font-weight:700;
-  letter-spacing:-0.01em;
-}
-.card-sub{font-size:11px;color:var(--text3);margin-top:2px}
-.card-body{padding:20px}
+        .theme-btn:hover { color: var(--fg); border-color: var(--border2); }
 
-/* ── KPI GRID ── */
-.kpi-row{
-  display:grid;
-  grid-template-columns:repeat(6,1fr);
-  gap:14px;
-  margin-bottom:22px;
-}
-@media(max-width:1400px){.kpi-row{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:900px){.kpi-row{grid-template-columns:repeat(2,1fr)}}
+        /* ── MAIN CONTENT ── */
+        .main {
+            margin-left: 220px;
+            flex: 1;
+            min-height: 100vh;
+        }
 
-.kpi{
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  padding:16px;
-  display:flex;justify-content:space-between;align-items:flex-start;
-  transition:var(--transition);
-  position:relative;
-  overflow:hidden;
-}
-.kpi::after{
-  content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
-  background:var(--kpi-color,var(--accent));
-  opacity:0.5;
-}
-.kpi:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.25)}
-.kpi-label{font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--text3)}
-.kpi-val{
-  font-family:var(--font-mono);
-  font-size:26px;font-weight:500;
-  margin-top:6px;line-height:1;
-  color:var(--text);
-}
-.kpi-icon{
-  width:34px;height:34px;border-radius:8px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:16px;
-  background:rgba(255,255,255,0.05);
-  flex-shrink:0;
-}
+        /* ── TOP BAR ── */
+        .topbar {
+            padding: 16px 28px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--surface);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
 
-/* ── CHARTS GRID ── */
-.charts-2col{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px}
-.charts-3col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:22px}
-@media(max-width:1200px){.charts-2col,.charts-3col{grid-template-columns:1fr}}
+        .topbar-title {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
 
-.chart-wrap{position:relative;height:260px}
-.chart-wrap.tall{height:300px}
-.chart-wrap.short{height:200px}
+        .topbar-actions { display: flex; gap: 10px; align-items: center; }
 
-/* Gauge Center */
-.gauge-wrap{position:relative;height:180px;display:flex;align-items:center;justify-content:center}
-.gauge-center{position:absolute;text-align:center;top:55%}
-.gauge-pct{font-family:var(--font-mono);font-size:28px;font-weight:500;line-height:1}
-.gauge-lbl{font-size:10px;color:var(--text3);margin-top:3px;letter-spacing:0.1em;text-transform:uppercase}
-.gauge-stats{
-  display:grid;grid-template-columns:1fr 1fr;
-  border-top:1px solid var(--border);
-  margin-top:16px;
-}
-.gauge-stat{padding:12px;text-align:center}
-.gauge-stat:first-child{border-right:1px solid var(--border)}
-.gauge-stat-val{font-family:var(--font-mono);font-size:20px;font-weight:500}
-.gauge-stat-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-top:2px}
+        /* ── BUTTONS ── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border2);
+            background: var(--surface2);
+            color: var(--fg2);
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-family: var(--font-body);
+            font-weight: 500;
+            transition: all 0.15s;
+        }
 
-/* ── FILTERS BAR ── */
-.filters-bar{
-  display:flex;align-items:flex-end;flex-wrap:wrap;gap:12px;
-  padding:14px 20px;
-  border-bottom:1px solid var(--border);
-}
-.fgroup{display:flex;flex-direction:column;gap:5px;min-width:150px}
-.fgroup label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3)}
-select,input{
-  padding:7px 10px;
-  background:var(--surface2);
-  border:1px solid var(--border);
-  border-radius:7px;
-  color:var(--text);
-  font-family:var(--font-body);
-  font-size:12.5px;
-  outline:none;
-  transition:border-color var(--transition);
-  width:100%;
-}
-select:focus,input:focus{border-color:var(--accent)}
-select option{background:var(--surface)}
+        .btn:hover { color: var(--fg); border-color: var(--muted); background: var(--surface); }
 
-/* ── TABLE ── */
-.tbl-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse}
-th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--border)}
-th{
-  font-size:9.5px;font-weight:700;
-  letter-spacing:0.12em;text-transform:uppercase;
-  color:var(--text3);
-  background:var(--surface2);
-  white-space:nowrap;
-  position:sticky;top:0;
-}
-td{font-size:12.5px;white-space:nowrap}
-tr:hover td{background:rgba(255,255,255,0.02)}
-tr:last-child td{border-bottom:none}
+        .btn-primary {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #fff;
+        }
 
-/* ── BADGES ── */
-.badge{
-  display:inline-flex;align-items:center;gap:4px;
-  padding:2px 8px;
-  border-radius:4px;
-  font-size:10.5px;font-weight:600;
-  letter-spacing:0.03em;
-}
-.badge-ok{background:var(--green-dim);color:var(--green)}
-.badge-fail{background:var(--red-dim);color:var(--red)}
-.badge-warn{background:var(--amber-dim);color:var(--amber)}
-.badge-blue{background:rgba(37,99,235,0.15);color:var(--accent2)}
+        .btn-primary:hover { opacity: 0.88; }
 
-/* ── SEARCH ── */
-.search-wrap{position:relative;flex:1;max-width:360px}
-.search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none}
-.search-wrap input{padding-left:34px}
+        .btn-danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+        .btn-danger:hover { opacity: 0.88; }
 
-/* ── MODAL ── */
-.modal-bg{
-  position:fixed;inset:0;
-  background:rgba(0,0,0,0.75);
-  backdrop-filter:blur(4px);
-  display:flex;align-items:center;justify-content:center;
-  z-index:200;
-  opacity:0;visibility:hidden;
-  transition:var(--transition);
-}
-.modal-bg.open{opacity:1;visibility:visible}
-.modal{
-  background:var(--surface);
-  border:1px solid var(--border2);
-  border-radius:14px;
-  padding:24px;
-  width:min(680px,92vw);
-  max-height:88vh;overflow-y:auto;
-  transform:scale(0.95) translateY(8px);
-  transition:var(--transition);
-}
-.modal-bg.open .modal{transform:scale(1) translateY(0)}
-.modal-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
-.modal-title{font-family:var(--font-display);font-size:17px;font-weight:700}
-.frow{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.fblock{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
-.fblock label{font-size:11px;font-weight:600;color:var(--text2)}
-.fblock .hint{font-size:10px;color:var(--text3);margin-top:3px}
-.form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
+        .btn-sm { padding: 5px 12px; font-size: 0.75rem; }
+        .btn-ghost { background: transparent; border-color: transparent; }
+        .btn-ghost:hover { background: var(--surface2); border-color: var(--border); }
 
-/* ── RECENT TESTS LIST ── */
-.tests-list{display:flex;flex-direction:column;gap:0}
-.test-row{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:11px 0;
-  border-bottom:1px solid var(--border);
-  gap:12px;
-}
-.test-row:last-child{border-bottom:none}
-.test-pn{font-family:var(--font-mono);font-size:12.5px;font-weight:500;color:var(--text)}
-.test-meta{font-size:10.5px;color:var(--text3);margin-top:2px}
-.test-val{font-family:var(--font-mono);font-size:12.5px;text-align:right}
-.test-time{font-size:10px;color:var(--text3);margin-top:2px;text-align:right}
+        /* Print button */
+        .btn-print {
+            background: linear-gradient(135deg, var(--accent), var(--primary));
+            border: none;
+            color: #fff;
+            font-weight: 600;
+        }
 
-/* ── PROGRESS BAR ── */
-.prog-bar{height:5px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden;margin-top:7px}
-.prog-fill{height:100%;background:var(--red);border-radius:3px;transition:width 0.4s ease}
+        .btn-print:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(77,158,255,0.3); }
 
-/* ── TOAST ── */
-.toast-tray{
-  position:fixed;top:18px;right:18px;
-  z-index:999;
-  display:flex;flex-direction:column;gap:8px;
-}
-.toast{
-  background:var(--surface);
-  border:1px solid var(--border2);
-  border-radius:9px;
-  padding:11px 16px;
-  display:flex;align-items:center;gap:10px;
-  box-shadow:0 10px 30px rgba(0,0,0,0.4);
-  font-size:13px;
-  animation:toastIn .25s ease;
-  min-width:240px;
-}
-.toast.ok{border-left:3px solid var(--green)}
-.toast.err{border-left:3px solid var(--red)}
-@keyframes toastIn{from{transform:translateX(30px);opacity:0}to{transform:translateX(0);opacity:1}}
+        /* ── CONTENT ── */
+        .content { padding: 28px; }
 
-/* ── PDF SELECTOR ── */
-.sel-indicator{
-  display:inline-flex;align-items:center;justify-content:center;
-  width:18px;height:18px;border-radius:4px;
-  border:1.5px solid var(--border2);
-  font-size:10px;
-  transition:var(--transition);
-  flex-shrink:0;
-}
-.sel-row{cursor:pointer}
-.sel-row.selected td:first-child .sel-indicator{
-  background:var(--accent);
-  border-color:var(--accent);
-  color:#fff;
-}
-.sel-row:hover td{background:rgba(37,99,235,0.04)}
+        /* ── SECTIONS ── */
+        .section { display: none; }
+        .section.active { display: block; }
 
-/* ── PDF MODAL ── */
-.pdf-options{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
-.pdf-opt{
-  border:1.5px solid var(--border);
-  border-radius:9px;
-  padding:14px 16px;
-  cursor:pointer;
-  transition:var(--transition);
-  text-align:center;
-}
-.pdf-opt:hover{border-color:var(--border2)}
-.pdf-opt.active{border-color:var(--accent);background:rgba(37,99,235,0.08)}
-.pdf-opt-icon{font-size:22px;margin-bottom:6px}
-.pdf-opt-title{font-size:12.5px;font-weight:600}
-.pdf-opt-desc{font-size:10.5px;color:var(--text3);margin-top:3px}
+        /* ── FILTERS ── */
+        .filters-bar {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 16px 20px;
+            margin-bottom: 24px;
+        }
 
-/* ── FIREBASE AUTH BANNER ── */
-.fb-banner{
-  background:linear-gradient(135deg,rgba(37,99,235,0.1),rgba(139,92,246,0.08));
-  border:1px solid rgba(37,99,235,0.25);
-  border-radius:9px;
-  padding:12px 16px;
-  display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:20px;
-  font-size:12.5px;
-  gap:12px;
-}
-.fb-banner.hidden{display:none}
-.fb-user{display:flex;align-items:center;gap:10px}
-.fb-avatar{width:28px;height:28px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+        .filter-group { display: flex; flex-direction: column; gap: 4px; min-width: 160px; }
 
-/* ── EMPTY STATE ── */
-.empty{text-align:center;padding:48px 20px;color:var(--text3)}
-.empty-icon{font-size:36px;margin-bottom:12px;opacity:0.5}
+        .filter-group label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted-fg);
+            font-family: var(--font-mono);
+        }
 
-/* ── DIVIDER ── */
-.hr{border:none;border-top:1px solid var(--border);margin:0}
+        select, input[type="text"], input[type="number"], input[type="date"], input[type="time"] {
+            padding: 7px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border2);
+            background: var(--surface2);
+            color: var(--fg);
+            font-size: 0.82rem;
+            font-family: var(--font-body);
+            outline: none;
+            transition: border-color 0.15s;
+            width: 100%;
+        }
 
-/* ── GITHUB SECTION ── */
-.github-card{
-  background:linear-gradient(135deg,rgba(255,255,255,0.03),transparent);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  padding:20px;
-}
-.code-block{
-  background:var(--bg);
-  border:1px solid var(--border);
-  border-radius:7px;
-  padding:12px 14px;
-  font-family:var(--font-mono);
-  font-size:12px;
-  color:var(--text2);
-  margin-top:10px;
-  overflow-x:auto;
-  line-height:1.8;
-}
-.code-block .c{color:var(--text3)}
-.code-block .k{color:var(--accent2)}
-.code-block .s{color:var(--green)}
+        select:focus, input:focus { border-color: var(--primary); }
 
-/* ── RESPONSIVE ── */
-@media(max-width:768px){
-  .app-shell{grid-template-columns:1fr}
-  .sidebar{display:none}
-  .main-content{margin-left:0}
-  .kpi-row{grid-template-columns:1fr 1fr}
-  .charts-2col,.charts-3col{grid-template-columns:1fr}
-  .frow{grid-template-columns:1fr}
-}
+        /* ── KPI GRID ── */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
 
-/* ── ANIMATIONS ── */
-@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-.page.active{animation:fadeIn 0.25s ease}
+        .kpi-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 18px 16px;
+            position: relative;
+            overflow: hidden;
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
 
-.dot-live{
-  width:7px;height:7px;border-radius:50%;
-  background:var(--green);
-  box-shadow:0 0 0 0 rgba(16,185,129,0.4);
-  animation:pulse-dot 2s infinite;
-  display:inline-block;
-  margin-right:5px;
-}
-@keyframes pulse-dot{
-  0%{box-shadow:0 0 0 0 rgba(16,185,129,0.4)}
-  70%{box-shadow:0 0 0 6px rgba(16,185,129,0)}
-  100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}
-}
+        .kpi-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
 
-/* ── PRINT HIDDEN ── */
-@media print{.app-shell{display:block}.sidebar,.topbar{display:none}.main-content{margin:0}}
-</style>
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+        }
+
+        .kpi-card.c-primary::before { background: var(--primary); }
+        .kpi-card.c-success::before { background: var(--success); }
+        .kpi-card.c-danger::before { background: var(--danger); }
+        .kpi-card.c-accent::before { background: var(--accent); }
+        .kpi-card.c-warning::before { background: var(--warning); }
+
+        .kpi-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted-fg);
+            font-family: var(--font-mono);
+            margin-bottom: 8px;
+        }
+
+        .kpi-value {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 1.8rem;
+            line-height: 1;
+        }
+
+        .kpi-value.c-primary { color: var(--primary); }
+        .kpi-value.c-success { color: var(--success); }
+        .kpi-value.c-danger { color: var(--danger); }
+        .kpi-value.c-accent { color: var(--accent); }
+        .kpi-value.c-warning { color: var(--warning); }
+
+        .kpi-icon {
+            position: absolute;
+            top: 16px; right: 16px;
+            font-size: 1.4rem;
+            opacity: 0.3;
+        }
+
+        /* ── CHARTS ── */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .charts-row-3 {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .card-title {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+
+        .card-subtitle {
+            font-size: 0.75rem;
+            color: var(--muted-fg);
+            margin-top: 2px;
+        }
+
+        .chart-wrap { position: relative; height: 260px; }
+        .chart-wrap-sm { position: relative; height: 220px; }
+
+        /* Gauge wrapper */
+        .gauge-wrap {
+            position: relative;
+            height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .gauge-center {
+            position: absolute;
+            text-align: center;
+            top: 55%;
+        }
+
+        .gauge-pct {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 2.2rem;
+            color: var(--success);
+        }
+
+        .gauge-lbl {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted-fg);
+            font-family: var(--font-mono);
+        }
+
+        .gauge-stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .gauge-stat-val {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+
+        .gauge-stat-lbl {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--muted-fg);
+            font-family: var(--font-mono);
+        }
+
+        /* Lists */
+        .list-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .list-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .list-item:last-child { border-bottom: none; }
+
+        /* ── BADGES ── */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            font-family: var(--font-mono);
+        }
+
+        .badge-success { background: var(--success-dim); color: var(--success); }
+        .badge-danger { background: var(--danger-dim); color: var(--danger); }
+        .badge-warning { background: var(--warning-dim); color: var(--warning); }
+        .badge-primary { background: var(--primary-dim); color: var(--primary); }
+
+        /* ── PROGRESS BAR ── */
+        .prog { height: 5px; background: var(--border2); border-radius: 99px; overflow: hidden; margin-top: 6px; }
+        .prog-fill { height: 100%; background: var(--danger); border-radius: 99px; transition: width 0.4s; }
+
+        /* ── TABLE ── */
+        .table-wrap { overflow-x: auto; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+
+        th {
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted-fg);
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border2);
+            text-align: left;
+            background: var(--surface);
+            position: sticky;
+            top: 0;
+        }
+
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            color: var(--fg2);
+        }
+
+        tr:hover td { background: var(--surface2); }
+
+        .mono { font-family: var(--font-mono); font-size: 0.78rem; color: var(--fg); }
+
+        /* ── SEARCH ── */
+        .search-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            align-items: center;
+        }
+
+        .search-wrap { position: relative; flex: 1; }
+        .search-wrap input { padding-left: 36px; }
+        .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted-fg); font-size: 0.85rem; }
+
+        /* ── MODAL ── */
+        .modal-bg {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.65);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 500;
+            opacity: 0; visibility: hidden;
+            transition: opacity 0.2s;
+        }
+
+        .modal-bg.open { opacity: 1; visibility: visible; }
+
+        .modal {
+            background: var(--surface);
+            border: 1px solid var(--border2);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            width: 92%;
+            max-width: 680px;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: scale(0.94);
+            transition: transform 0.2s;
+        }
+
+        .modal-bg.open .modal { transform: scale(1); }
+
+        .modal-head {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .form-group { margin-bottom: 14px; }
+
+        .form-group label {
+            display: block;
+            font-size: 0.72rem;
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--muted-fg);
+            margin-bottom: 5px;
+        }
+
+        .form-hint {
+            font-size: 0.7rem;
+            color: var(--muted-fg);
+            margin-top: 3px;
+        }
+
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+        .form-actions {
+            display: flex; justify-content: flex-end; gap: 10px;
+            margin-top: 22px;
+            padding-top: 18px;
+            border-top: 1px solid var(--border);
+        }
+
+        /* ── TOAST ── */
+        .toast-area {
+            position: fixed; top: 20px; right: 20px;
+            z-index: 9999;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+
+        .toast {
+            background: var(--surface2);
+            border: 1px solid var(--border2);
+            border-radius: var(--radius);
+            padding: 12px 16px;
+            display: flex; align-items: center; gap: 10px;
+            box-shadow: var(--shadow);
+            font-size: 0.82rem;
+            animation: toastIn 0.25s ease;
+            min-width: 220px;
+        }
+
+        @keyframes toastIn {
+            from { transform: translateX(60px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .toast-success { border-left: 3px solid var(--success); }
+        .toast-error { border-left: 3px solid var(--danger); }
+
+        /* ─────────────────────────────────────────────
+           PRINT MODAL
+        ───────────────────────────────────────────── */
+        .print-modal-bg {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.75);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 800;
+            opacity: 0; visibility: hidden;
+            transition: opacity 0.2s;
+        }
+
+        .print-modal-bg.open { opacity: 1; visibility: visible; }
+
+        .print-modal {
+            background: var(--surface);
+            border: 1px solid var(--border2);
+            border-radius: var(--radius-lg);
+            width: 92%;
+            max-width: 540px;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: scale(0.94);
+            transition: transform 0.2s;
+        }
+
+        .print-modal-bg.open .print-modal { transform: scale(1); }
+
+        .pm-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .pm-title {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 1.05rem;
+        }
+
+        .pm-body { padding: 20px 24px; }
+
+        .pm-section {
+            margin-bottom: 20px;
+        }
+
+        .pm-section-label {
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--muted-fg);
+            margin-bottom: 10px;
+        }
+
+        .pm-checkgrid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .pm-check {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border: 1px solid var(--border2);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-size: 0.8rem;
+            color: var(--fg2);
+        }
+
+        .pm-check:hover { border-color: var(--primary); color: var(--fg); }
+        .pm-check.selected { border-color: var(--primary); background: var(--primary-dim); color: var(--primary); }
+
+        .pm-check input { display: none; }
+
+        .pm-check-icon { font-size: 1rem; }
+
+        .pm-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        /* ─────────────────────────────────────────────
+           PRINT STYLES
+        ───────────────────────────────────────────── */
+        @media print {
+            body { background: #fff !important; color: #000 !important; }
+            .sidebar, .topbar, .toast-area, .print-modal-bg, .modal-bg, .no-print { display: none !important; }
+            .main { margin-left: 0 !important; }
+            .content { padding: 0 !important; }
+
+            #printArea {
+                display: block !important;
+            }
+
+            #printArea * { color: #000 !important; background: transparent !important; border-color: #ccc !important; }
+
+            .pr-page { page-break-after: always; }
+            .pr-page:last-child { page-break-after: avoid; }
+        }
+
+        /* ── PRINT AREA (hidden on screen) ── */
+        #printArea { display: none; }
+
+        /* ── Print Report Styles (for printWindow) ── */
+        .pr-doc {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            color: #1a2540;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 32px;
+            font-size: 12px;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 1200px) {
+            .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+            .charts-row, .charts-row-3 { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 900px) {
+            .sidebar { transform: translateX(-100%); }
+            .main { margin-left: 0; }
+            .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+            .list-row { grid-template-columns: 1fr; }
+        }
+
+        /* ── EMPTY STATE ── */
+        .empty-state {
+            text-align: center;
+            padding: 32px 20px;
+            color: var(--muted-fg);
+        }
+
+        .empty-icon { font-size: 2.5rem; opacity: 0.4; margin-bottom: 12px; }
+
+        /* actions in table */
+        .table-actions { display: flex; gap: 6px; }
+
+        .action-btn {
+            padding: 5px 9px;
+            border-radius: 6px;
+            border: 1px solid var(--border2);
+            background: var(--surface2);
+            cursor: pointer;
+            font-size: 0.72rem;
+            color: var(--muted-fg);
+            transition: all 0.15s;
+        }
+
+        .action-btn:hover { color: var(--fg); border-color: var(--muted); }
+        .action-btn.del:hover { color: var(--danger); border-color: var(--danger); background: var(--danger-dim); }
+
+        /* Spec info */
+        .spec-hint { font-size: 0.7rem; color: var(--primary); margin-top: 3px; }
+    </style>
 </head>
 <body data-theme="dark">
 
-<div class="app-shell">
-  <!-- SIDEBAR -->
-  <aside class="sidebar">
-    <div class="sidebar-logo">
-      <div class="sidebar-logo-mark">Röchling<span>.</span>QA</div>
-      <div class="sidebar-logo-sub">Gestão de Ensaios</div>
-    </div>
-    <nav class="sidebar-nav">
-      <div class="nav-section-label">Principal</div>
-      <button class="nav-item active" onclick="nav('dashboard',this)">
-        <span class="nav-icon">📊</span> Dashboard
-      </button>
-      <button class="nav-item" onclick="nav('products',this)">
-        <span class="nav-icon">📦</span> Produtos
-      </button>
-      <button class="nav-item" onclick="nav('tests',this)">
-        <span class="nav-icon">🧪</span> Ensaios
-      </button>
-      <button class="nav-item" onclick="nav('reports',this)">
-        <span class="nav-icon">📄</span> Relatórios
-      </button>
-      <div class="nav-section-label">Configurações</div>
-      <button class="nav-item" onclick="nav('settings',this)">
-        <span class="nav-icon">⚙️</span> Configurações
-      </button>
-    </nav>
-    <div class="sidebar-footer">
-      <div class="sync-status" id="syncStatus">
-        <div class="sync-dot offline" id="syncDot"></div>
-        <span id="syncLabel">Modo local</span>
-      </div>
-    </div>
-  </aside>
+<div class="layout">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="logo">
+            <div class="logo-text">Rochling</div>
+            <div class="logo-sub">QA · Ensaios</div>
+        </div>
+        <nav class="nav">
+            <div class="nav-label">Visão Geral</div>
+            <button class="nav-item active" onclick="showSection('dashboard', this)">
+                <span class="nav-icon">◈</span> Dashboard
+            </button>
+            <div class="nav-label">Dados</div>
+            <button class="nav-item" onclick="showSection('products', this)">
+                <span class="nav-icon">▣</span> Produtos
+            </button>
+            <button class="nav-item" onclick="showSection('tests', this)">
+                <span class="nav-icon">◉</span> Ensaios
+            </button>
+        </nav>
+        <div class="sidebar-footer">
+            <button class="theme-btn" onclick="toggleTheme()">
+                <span id="themeIcon">☀️</span> <span id="themeLabel">Tema Claro</span>
+            </button>
+        </div>
+    </aside>
 
-  <!-- MAIN -->
-  <div class="main-content">
-    <!-- TOPBAR -->
-    <header class="topbar">
-      <div class="topbar-left">
-        <div>
-          <div class="page-title" id="pageTitle">Dashboard</div>
-          <div class="page-subtitle" id="pageSubtitle">Visão geral dos ensaios</div>
-        </div>
-      </div>
-      <div class="topbar-right">
-        <div id="authArea"></div>
-        <button class="theme-btn" onclick="toggleTheme()" title="Tema">🌓</button>
-        <button class="btn btn-primary btn-sm" onclick="openTestModal()">
-          <span>＋</span> Novo Ensaio
-        </button>
-      </div>
-    </header>
-
-    <!-- ════ DASHBOARD PAGE ════ -->
-    <div id="p-dashboard" class="page active">
-      <!-- Firebase Banner -->
-      <div class="fb-banner hidden" id="fbBanner">
-        <div class="fb-user">
-          <div class="fb-avatar" id="fbAvatar">?</div>
-          <div>
-            <div style="font-weight:600" id="fbName">—</div>
-            <div style="font-size:10.5px;color:var(--text3)"><span class="dot-live"></span>Sincronizado com Firebase</div>
-          </div>
-        </div>
-        <button class="btn btn-sm btn-ghost" onclick="fbSignOut()">Sair</button>
-      </div>
-
-      <!-- Filters -->
-      <div class="card" style="margin-bottom:16px">
-        <div class="filters-bar">
-          <div class="fgroup">
-            <label>Período</label>
-            <select id="f-period" onchange="refreshDash()">
-              <option value="7">7 dias</option>
-              <option value="14">14 dias</option>
-              <option value="30" selected>30 dias</option>
-              <option value="90">90 dias</option>
-              <option value="all">Tudo</option>
-            </select>
-          </div>
-          <div class="fgroup">
-            <label>Produto</label>
-            <select id="f-product" onchange="refreshDash()"><option value="all">Todos</option></select>
-          </div>
-          <div class="fgroup">
-            <label>Tipo de Ensaio</label>
-            <select id="f-type" onchange="refreshDash()"><option value="all">Todos</option></select>
-          </div>
-          <div class="fgroup">
-            <label>Executante</label>
-            <select id="f-exec" onchange="refreshDash()"><option value="all">Todos</option></select>
-          </div>
-          <button class="btn btn-ghost btn-sm" onclick="resetFilters()" style="margin-bottom:0;align-self:flex-end">↺ Limpar</button>
-          <button class="btn btn-sm" onclick="exportCSV()" style="margin-bottom:0;align-self:flex-end">⬇ CSV</button>
-        </div>
-      </div>
-
-      <!-- KPIs -->
-      <div class="kpi-row" id="kpiGrid"></div>
-
-      <!-- Charts Row 1 -->
-      <div class="charts-2col">
-        <div class="card">
-          <div class="card-head">
-            <div>
-              <div class="card-title">Tendência de Ensaios</div>
-              <div class="card-sub">Aprovados × Reprovados por dia</div>
-            </div>
-          </div>
-          <div class="card-body">
-            <div class="chart-wrap tall"><canvas id="c-trend"></canvas></div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-head">
-            <div>
-              <div class="card-title">Taxa de Aprovação</div>
-              <div class="card-sub">Performance do período</div>
-            </div>
-          </div>
-          <div class="card-body" style="padding-top:12px">
-            <div class="gauge-wrap"><canvas id="c-gauge"></canvas>
-              <div class="gauge-center">
-                <div class="gauge-pct" id="gPct">—</div>
-                <div class="gauge-lbl">aprovação</div>
-              </div>
-            </div>
-            <div class="gauge-stats">
-              <div class="gauge-stat">
-                <div class="gauge-stat-val" style="color:var(--green)" id="gOk">0</div>
-                <div class="gauge-stat-lbl">Aprovados</div>
-              </div>
-              <div class="gauge-stat">
-                <div class="gauge-stat-val" style="color:var(--red)" id="gFail">0</div>
-                <div class="gauge-stat-lbl">Reprovados</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Charts Row 2 -->
-      <div class="charts-3col">
-        <div class="card" style="grid-column:span 2">
-          <div class="card-head">
-            <div>
-              <div class="card-title">Volume por Produto</div>
-              <div class="card-sub">Top 8 por número de ensaios</div>
-            </div>
-          </div>
-          <div class="card-body">
-            <div class="chart-wrap"><canvas id="c-product"></canvas></div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-head">
-            <div><div class="card-title">Por Tipo</div></div>
-          </div>
-          <div class="card-body">
-            <div class="chart-wrap short"><canvas id="c-type"></canvas></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Lists -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-        <div class="card">
-          <div class="card-head">
-            <div class="card-title">⚠ Maior Índice de Reprovação</div>
-          </div>
-          <div class="card-body" id="list-rejected" style="padding:0 20px"></div>
-        </div>
-        <div class="card">
-          <div class="card-head">
-            <div class="card-title">Ensaios Recentes</div>
-          </div>
-          <div class="card-body tests-list" id="list-recent" style="padding:0 20px"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ════ PRODUCTS PAGE ════ -->
-    <div id="p-products" class="page">
-      <div class="card">
-        <div class="card-head">
-          <div>
-            <div class="card-title">Produtos Cadastrados</div>
-            <div class="card-sub" id="prodCount">— produtos</div>
-          </div>
-          <div style="display:flex;gap:8px;align-items:center">
-            <div class="search-wrap">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-              <input type="text" placeholder="Buscar PN ou descrição…" id="prod-search" oninput="renderProds()">
-            </div>
-            <button class="btn btn-primary btn-sm" onclick="openProdModal()">＋ Produto</button>
-          </div>
-        </div>
-        <div class="tbl-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>PN</th><th>Descrição</th><th>Tipo</th><th>Unidade</th><th>Especificação</th><th>Ensaios</th><th>Ações</th>
-              </tr>
-            </thead>
-            <tbody id="prodTbody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- ════ TESTS PAGE ════ -->
-    <div id="p-tests" class="page">
-      <div class="card">
-        <div class="card-head">
-          <div>
-            <div class="card-title">Registro de Ensaios</div>
-            <div class="card-sub" id="testCount">— ensaios</div>
-          </div>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <div class="search-wrap">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-              <input type="text" placeholder="Buscar PN, solicitante, executante…" id="test-search" oninput="renderTestsTable()">
-            </div>
-            <button class="btn btn-sm" onclick="openPdfModal()" title="Gerar PDF">🖨 PDF</button>
-            <button class="btn btn-primary btn-sm" onclick="openTestModal()">＋ Ensaio</button>
-          </div>
-        </div>
-        <div class="tbl-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th style="width:28px"><input type="checkbox" id="selAll" onchange="toggleSelAll(this)" style="width:auto"></th>
-                <th>Data</th><th>PN</th><th>Tipo</th><th>Especificação</th>
-                <th>Solicitante</th><th>Executante</th><th>Início</th><th>Fim</th>
-                <th>Resultado</th><th>Status</th><th>Obs.</th><th>Ações</th>
-              </tr>
-            </thead>
-            <tbody id="testTbody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- ════ REPORTS PAGE ════ -->
-    <div id="p-reports" class="page">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px">
-        <div class="card" style="cursor:pointer" onclick="genPdfAll()">
-          <div class="card-body" style="text-align:center;padding:32px 20px">
-            <div style="font-size:40px;margin-bottom:12px">📋</div>
-            <div style="font-family:var(--font-display);font-size:15px;font-weight:700">Relatório Completo</div>
-            <div style="font-size:11.5px;color:var(--text3);margin-top:6px">Todos os ensaios do período filtrado com gráfico de aprovação</div>
-            <button class="btn btn-primary btn-sm" style="margin-top:16px">Gerar PDF</button>
-          </div>
-        </div>
-        <div class="card" style="cursor:pointer" onclick="nav('tests',document.querySelector('.nav-item:nth-child(3)'));openPdfModal()">
-          <div class="card-body" style="text-align:center;padding:32px 20px">
-            <div style="font-size:40px;margin-bottom:12px">🏷</div>
-            <div style="font-family:var(--font-display);font-size:15px;font-weight:700">Laudo por Seleção</div>
-            <div style="font-size:11.5px;color:var(--text3);margin-top:6px">Selecione ensaios específicos e gere laudos técnicos individuais ou em lote</div>
-            <button class="btn btn-sm" style="margin-top:16px">Selecionar Ensaios</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-head"><div class="card-title">Resumo por Produto</div></div>
-        <div class="tbl-wrap">
-          <table>
-            <thead><tr><th>PN</th><th>Descrição</th><th>Tipo</th><th>Total</th><th>Aprovados</th><th>Reprovados</th><th>Taxa</th></tr></thead>
-            <tbody id="reportTbody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- ════ SETTINGS PAGE ════ -->
-    <div id="p-settings" class="page">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-        <!-- Firebase -->
-        <div class="card">
-          <div class="card-head">
-            <div>
-              <div class="card-title">🔥 Firebase</div>
-              <div class="card-sub">Sincronização em nuvem</div>
-            </div>
-          </div>
-          <div class="card-body">
-            <p style="font-size:12.5px;color:var(--text2);margin-bottom:16px">
-              Para habilitar sincronização em nuvem e autenticação, edite a constante <code style="background:var(--surface2);padding:2px 5px;border-radius:4px;font-family:var(--font-mono);font-size:11px">firebaseConfig</code> no topo do arquivo com as credenciais do seu projeto Firebase.
-            </p>
-            <div style="display:flex;flex-direction:column;gap:10px">
-              <div class="fblock">
-                <label>Status</label>
-                <div id="fbStatusText" style="font-size:12.5px;color:var(--text3)">Não configurado (modo local)</div>
-              </div>
-              <div id="fbLoginArea">
-                <button class="btn btn-primary btn-sm" onclick="fbLogin()">
-                  <span>G</span> Entrar com Google
+    <!-- MAIN -->
+    <div class="main">
+        <!-- TOP BAR -->
+        <header class="topbar">
+            <div class="topbar-title" id="topbarTitle">Dashboard</div>
+            <div class="topbar-actions">
+                <button class="btn btn-print" onclick="openPrintModal()">
+                    🖨️ Imprimir Relatório
                 </button>
-              </div>
+                <button class="btn" onclick="exportCSV()">
+                    📥 CSV
+                </button>
             </div>
-          </div>
-        </div>
+        </header>
 
-        <!-- GitHub Deploy -->
-        <div class="github-card">
-          <div class="card-head" style="border:none;padding:0 0 14px">
-            <div>
-              <div class="card-title">🐙 Deploy — GitHub Pages</div>
-              <div class="card-sub">Hospede gratuitamente no GitHub</div>
-            </div>
-          </div>
-          <p style="font-size:12.5px;color:var(--text2);margin-bottom:14px">Siga os passos abaixo para publicar o dashboard online:</p>
-          
-          <div style="display:flex;flex-direction:column;gap:12px">
-            <div>
-              <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">1. Criar repositório</div>
-              <div class="code-block">
-                <span class="c"># No GitHub, crie um repositório público</span><br>
-                <span class="c"># Salve este arquivo como</span> <span class="s">index.html</span>
-              </div>
-            </div>
-            <div>
-              <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">2. Subir o arquivo</div>
-              <div class="code-block">
-                <span class="k">git</span> init<br>
-                <span class="k">git</span> add index.html<br>
-                <span class="k">git</span> commit -m <span class="s">"feat: qa dashboard"</span><br>
-                <span class="k">git</span> branch -M main<br>
-                <span class="k">git</span> remote add origin <span class="s">https://github.com/SEU_USER/REPO.git</span><br>
-                <span class="k">git</span> push -u origin main
-              </div>
-            </div>
-            <div>
-              <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">3. Ativar GitHub Pages</div>
-              <div class="code-block">
-                <span class="c">Repositório → Settings → Pages</span><br>
-                <span class="c">Source:</span> <span class="s">Deploy from branch</span><br>
-                <span class="c">Branch:</span> <span class="s">main / (root)</span><br><br>
-                <span class="c">✓ URL: https://SEU_USER.github.io/REPO/</span>
-              </div>
-            </div>
-            <div>
-              <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">4. (Opcional) Domínio customizado</div>
-              <div class="code-block">
-                <span class="c">Settings → Pages → Custom domain</span><br>
-                <span class="c">Ex: qa.rochlinging.com.br</span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <!-- CONTENT -->
+        <div class="content">
 
-        <!-- Data management -->
-        <div class="card">
-          <div class="card-head"><div class="card-title">💾 Dados</div></div>
-          <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
-            <button class="btn btn-sm" onclick="exportAllJSON()">⬇ Exportar todos dados (JSON)</button>
-            <label class="btn btn-sm" style="cursor:pointer">
-              ⬆ Importar dados (JSON)
-              <input type="file" accept=".json" style="display:none" onchange="importJSON(this)">
-            </label>
-            <hr class="hr">
-            <button class="btn btn-danger btn-sm" onclick="clearAll()">🗑 Limpar todos os dados</button>
-          </div>
-        </div>
+            <!-- ── DASHBOARD ── -->
+            <div id="dashboard" class="section active">
+                <!-- Filters -->
+                <div class="filters-bar no-print">
+                    <div class="filter-group">
+                        <label>Período</label>
+                        <select id="periodFilter" onchange="updateDashboard()">
+                            <option value="7">Últimos 7 dias</option>
+                            <option value="14">Últimos 14 dias</option>
+                            <option value="30" selected>Últimos 30 dias</option>
+                            <option value="90">Últimos 90 dias</option>
+                            <option value="all">Todo período</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Produto</label>
+                        <select id="productFilter" onchange="updateDashboard()">
+                            <option value="all">Todos</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Tipo de Ensaio</label>
+                        <select id="testTypeFilter" onchange="updateDashboard()">
+                            <option value="all">Todos</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Executante</label>
+                        <select id="executorFilter" onchange="updateDashboard()">
+                            <option value="all">Todos</option>
+                        </select>
+                    </div>
+                    <div style="margin-left: auto;">
+                        <button class="btn btn-sm btn-ghost" onclick="resetFilters()">↺ Limpar</button>
+                    </div>
+                </div>
 
-        <!-- App info -->
-        <div class="card">
-          <div class="card-head"><div class="card-title">ℹ Sobre</div></div>
-          <div class="card-body" style="font-size:12.5px;color:var(--text2);display:flex;flex-direction:column;gap:8px">
-            <div><span style="color:var(--text3)">Versão:</span> 2.0.0</div>
-            <div><span style="color:var(--text3)">Organização:</span> Röchling Automotive</div>
-            <div><span style="color:var(--text3)">Tecnologias:</span> HTML5 · Chart.js · jsPDF · Firebase</div>
-            <div><span style="color:var(--text3)">Armazenamento:</span> LocalStorage + Firebase Firestore</div>
-            <div><span style="color:var(--text3)">PDF:</span> jsPDF + autotable</div>
-          </div>
+                <!-- KPIs -->
+                <div class="kpi-grid" id="kpiGrid"></div>
+
+                <!-- Row 1: Trend + Gauge -->
+                <div class="charts-row">
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">Tendência de Ensaios</div>
+                                <div class="card-subtitle">Aprovados × Reprovados ao longo do tempo</div>
+                            </div>
+                        </div>
+                        <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">Taxa de Aprovação</div>
+                                <div class="card-subtitle">Performance global</div>
+                            </div>
+                        </div>
+                        <div class="gauge-wrap">
+                            <canvas id="gaugeChart"></canvas>
+                            <div class="gauge-center">
+                                <div class="gauge-pct" id="gaugeValue">0%</div>
+                                <div class="gauge-lbl">aprovação</div>
+                            </div>
+                        </div>
+                        <div class="gauge-stats">
+                            <div style="text-align:center;">
+                                <div class="gauge-stat-val" style="color:var(--success);" id="gaugeApproved">0</div>
+                                <div class="gauge-stat-lbl">Aprovados</div>
+                            </div>
+                            <div style="text-align:center;">
+                                <div class="gauge-stat-val" style="color:var(--danger);" id="gaugeRejected">0</div>
+                                <div class="gauge-stat-lbl">Reprovados</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 2: Products + Type -->
+                <div class="charts-row">
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">Top Produtos por Volume</div>
+                                <div class="card-subtitle">Quantidade de ensaios por PN</div>
+                            </div>
+                        </div>
+                        <div class="chart-wrap"><canvas id="productChart"></canvas></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">Por Tipo de Ensaio</div>
+                                <div class="card-subtitle">Distribuição</div>
+                            </div>
+                        </div>
+                        <div class="chart-wrap-sm"><canvas id="typeChart"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- Lists Row -->
+                <div class="list-row">
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">⚠️ Mais Reprovações</div>
+                                <div class="card-subtitle">Produtos com maior taxa de falha</div>
+                            </div>
+                        </div>
+                        <div id="rejectedList"></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">Ensaios Recentes</div>
+                                <div class="card-subtitle">Últimos registros</div>
+                            </div>
+                        </div>
+                        <div id="recentList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── PRODUCTS ── -->
+            <div id="products" class="section">
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <div class="card-title">Produtos Cadastrados</div>
+                            <div class="card-subtitle">Gerencie especificações e tipos de ensaio</div>
+                        </div>
+                        <button class="btn btn-primary" onclick="openProductModal()">+ Novo Produto</button>
+                    </div>
+                    <div class="search-row">
+                        <div class="search-wrap">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" id="productSearch" placeholder="Buscar PN ou descrição..." oninput="renderProducts()">
+                        </div>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>PN</th>
+                                    <th>Descrição</th>
+                                    <th>Tipo de Ensaio</th>
+                                    <th>Unidade</th>
+                                    <th>Especificação</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productsTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── TESTS ── -->
+            <div id="tests" class="section">
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <div class="card-title">Ensaios Realizados</div>
+                            <div class="card-subtitle">Todos os registros de ensaio</div>
+                        </div>
+                        <button class="btn btn-primary" onclick="openTestModal()">+ Novo Ensaio</button>
+                    </div>
+                    <div class="search-row">
+                        <div class="search-wrap">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" id="testSearch" placeholder="Buscar PN, solicitante ou executante..." oninput="renderTests()">
+                        </div>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>PN</th>
+                                    <th>Tipo</th>
+                                    <th>Especificação</th>
+                                    <th>Solicitante</th>
+                                    <th>Executante</th>
+                                    <th>Início</th>
+                                    <th>Fim</th>
+                                    <th>Resultado</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="testsTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
-  </div>
 </div>
 
-<!-- PRODUCT MODAL -->
-<div class="modal-bg" id="m-prod">
-  <div class="modal">
-    <div class="modal-top">
-      <div class="modal-title" id="prodModalTitle">Novo Produto</div>
-      <button class="btn btn-icon btn-ghost" onclick="closeModal('m-prod')">✕</button>
+<!-- ══════════════════════
+     PRODUCT MODAL
+══════════════════════ -->
+<div class="modal-bg" id="productModal">
+    <div class="modal">
+        <div class="modal-head">
+            <div class="modal-title" id="productModalTitle">Novo Produto</div>
+            <button class="btn btn-ghost btn-sm" onclick="closeModal('productModal')">✕</button>
+        </div>
+        <form id="productForm" onsubmit="saveProduct(event)">
+            <input type="hidden" id="productId">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>PN (Part Number) *</label>
+                    <input type="text" id="productPn" required placeholder="Ex: PN-12345">
+                </div>
+                <div class="form-group">
+                    <label>Unidade de Medida *</label>
+                    <input type="text" id="productUnit" required placeholder="Ex: MPa, HB, J">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Descrição *</label>
+                <input type="text" id="productDescription" required placeholder="Descrição do produto">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Tipo de Ensaio *</label>
+                    <input type="text" id="productTestType" required placeholder="Ex: Tração, Dureza, Impacto">
+                </div>
+                <div class="form-group">
+                    <label>Especificação Técnica *</label>
+                    <input type="text" id="productSpec" required placeholder="Ex: ≥ 50, ≤ 200">
+                    <div class="form-hint">Use ≥ para mínimo ou ≤ para máximo exigido</div>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn" onclick="closeModal('productModal')">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Salvar</button>
+            </div>
+        </form>
     </div>
-    <div class="frow">
-      <div class="fblock"><label>PN (Part Number) *</label><input type="text" id="p-pn" placeholder="Ex: PN-12345" required></div>
-      <div class="fblock"><label>Unidade de Medida *</label><input type="text" id="p-unit" placeholder="MPa, HB, J…" required><div class="hint">Unidade dos resultados</div></div>
-    </div>
-    <div class="fblock"><label>Descrição *</label><input type="text" id="p-desc" placeholder="Descrição do produto" required></div>
-    <div class="frow">
-      <div class="fblock"><label>Tipo de Ensaio *</label><input type="text" id="p-ttype" placeholder="Tração, Dureza, Impacto…" required></div>
-      <div class="fblock"><label>Especificação Técnica *</label><input type="text" id="p-spec" placeholder="≥ 400 ou ≤ 200" required><div class="hint">Use ≥ mínimo ou ≤ máximo</div></div>
-    </div>
-    <input type="hidden" id="p-id">
-    <div class="form-actions">
-      <button class="btn btn-ghost" onclick="closeModal('m-prod')">Cancelar</button>
-      <button class="btn btn-primary" onclick="saveProd()">Salvar Produto</button>
-    </div>
-  </div>
 </div>
 
-<!-- TEST MODAL -->
-<div class="modal-bg" id="m-test">
-  <div class="modal">
-    <div class="modal-top">
-      <div class="modal-title" id="testModalTitle">Novo Ensaio</div>
-      <button class="btn btn-icon btn-ghost" onclick="closeModal('m-test')">✕</button>
+<!-- ══════════════════════
+     TEST MODAL
+══════════════════════ -->
+<div class="modal-bg" id="testModal">
+    <div class="modal">
+        <div class="modal-head">
+            <div class="modal-title" id="testModalTitle">Novo Ensaio</div>
+            <button class="btn btn-ghost btn-sm" onclick="closeModal('testModal')">✕</button>
+        </div>
+        <form id="testForm" onsubmit="saveTest(event)">
+            <input type="hidden" id="testId">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Produto *</label>
+                    <select id="testProduct" required onchange="updateTestSpecInfo()">
+                        <option value="">Selecione...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Data *</label>
+                    <input type="date" id="testDate" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Solicitante *</label>
+                    <input type="text" id="testRequester" required placeholder="Nome do solicitante">
+                </div>
+                <div class="form-group">
+                    <label>Executante *</label>
+                    <input type="text" id="testExecutor" required placeholder="Nome do executante">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Início *</label>
+                    <input type="time" id="testStartTime" required>
+                </div>
+                <div class="form-group">
+                    <label>Término *</label>
+                    <input type="time" id="testEndTime" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Resultado *</label>
+                <input type="number" id="testResult" required step="0.01" placeholder="Valor obtido no ensaio">
+                <div class="spec-hint" id="testSpecInfo"></div>
+            </div>
+            <div class="form-group">
+                <label>Observações</label>
+                <input type="text" id="testNotes" placeholder="Observações adicionais (opcional)">
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn" onclick="closeModal('testModal')">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Salvar</button>
+            </div>
+        </form>
     </div>
-    <div class="frow">
-      <div class="fblock">
-        <label>Produto *</label>
-        <select id="t-prod" required onchange="onProdChange()"><option value="">Selecione…</option></select>
-      </div>
-      <div class="fblock"><label>Data *</label><input type="date" id="t-date" required></div>
-    </div>
-    <div class="frow">
-      <div class="fblock"><label>Solicitante *</label><input type="text" id="t-req" placeholder="Nome do solicitante" required></div>
-      <div class="fblock"><label>Executante *</label><input type="text" id="t-exec" placeholder="Nome do executante" required></div>
-    </div>
-    <div class="frow">
-      <div class="fblock"><label>Início *</label><input type="time" id="t-start" required></div>
-      <div class="fblock"><label>Término *</label><input type="time" id="t-end" required></div>
-    </div>
-    <div class="fblock">
-      <label>Resultado *</label>
-      <input type="number" id="t-res" step="0.01" placeholder="Valor obtido" required>
-      <div class="hint" id="t-spec-hint"></div>
-    </div>
-    <div class="fblock"><label>Observações</label><input type="text" id="t-notes" placeholder="Observações opcionais"></div>
-    <input type="hidden" id="t-id">
-    <div class="form-actions">
-      <button class="btn btn-ghost" onclick="closeModal('m-test')">Cancelar</button>
-      <button class="btn btn-primary" onclick="saveTest()">Salvar Ensaio</button>
-    </div>
-  </div>
 </div>
 
-<!-- PDF MODAL -->
-<div class="modal-bg" id="m-pdf">
-  <div class="modal" style="max-width:500px">
-    <div class="modal-top">
-      <div class="modal-title">🖨 Gerar PDF</div>
-      <button class="btn btn-icon btn-ghost" onclick="closeModal('m-pdf')">✕</button>
+<!-- ══════════════════════
+     PRINT MODAL
+══════════════════════ -->
+<div class="print-modal-bg" id="printModal">
+    <div class="print-modal">
+        <div class="pm-header">
+            <div class="pm-title">🖨️ Imprimir Relatório</div>
+            <button class="btn btn-ghost btn-sm" onclick="closePrintModal()">✕</button>
+        </div>
+        <div class="pm-body">
+            <div class="pm-section">
+                <div class="pm-section-label">Período (filtro atual aplicado)</div>
+                <div style="font-size:0.82rem; color:var(--muted-fg); padding:8px 12px; background:var(--surface2); border-radius:8px; font-family:var(--font-mono);" id="printPeriodInfo">—</div>
+            </div>
+
+            <div class="pm-section">
+                <div class="pm-section-label">Seções do Relatório</div>
+                <div class="pm-checkgrid">
+                    <label class="pm-check selected" id="chkKpi">
+                        <input type="checkbox" value="kpi" checked onchange="togglePrintCheck(this, 'chkKpi')">
+                        <span class="pm-check-icon">📊</span>
+                        <span>Indicadores KPI</span>
+                    </label>
+                    <label class="pm-check selected" id="chkApproval">
+                        <input type="checkbox" value="approval" checked onchange="togglePrintCheck(this, 'chkApproval')">
+                        <span class="pm-check-icon">✅</span>
+                        <span>Taxa de Aprovação</span>
+                    </label>
+                    <label class="pm-check selected" id="chkRejected">
+                        <input type="checkbox" value="rejected" checked onchange="togglePrintCheck(this, 'chkRejected')">
+                        <span class="pm-check-icon">⚠️</span>
+                        <span>Mais Reprovações</span>
+                    </label>
+                    <label class="pm-check selected" id="chkByProduct">
+                        <input type="checkbox" value="byProduct" checked onchange="togglePrintCheck(this, 'chkByProduct')">
+                        <span class="pm-check-icon">📦</span>
+                        <span>Por Produto</span>
+                    </label>
+                    <label class="pm-check selected" id="chkByType">
+                        <input type="checkbox" value="byType" checked onchange="togglePrintCheck(this, 'chkByType')">
+                        <span class="pm-check-icon">🧪</span>
+                        <span>Por Tipo de Ensaio</span>
+                    </label>
+                    <label class="pm-check selected" id="chkByExecutor">
+                        <input type="checkbox" value="byExecutor" checked onchange="togglePrintCheck(this, 'chkByExecutor')">
+                        <span class="pm-check-icon">👤</span>
+                        <span>Por Executante</span>
+                    </label>
+                    <label class="pm-check selected" id="chkAllTests">
+                        <input type="checkbox" value="allTests" checked onchange="togglePrintCheck(this, 'chkAllTests')">
+                        <span class="pm-check-icon">📋</span>
+                        <span>Tabela de Ensaios</span>
+                    </label>
+                    <label class="pm-check" id="chkProducts">
+                        <input type="checkbox" value="products" onchange="togglePrintCheck(this, 'chkProducts')">
+                        <span class="pm-check-icon">🗂️</span>
+                        <span>Catálogo Produtos</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="pm-section">
+                <div class="pm-section-label">Observações do Relatório</div>
+                <input type="text" id="printObs" placeholder="Ex: Relatório mensal para reunião de qualidade..." style="width:100%;">
+            </div>
+        </div>
+        <div class="pm-footer">
+            <button class="btn" onclick="closePrintModal()">Cancelar</button>
+            <button class="btn btn-print" onclick="executePrint()">🖨️ Gerar PDF</button>
+        </div>
     </div>
-    <div style="font-size:12.5px;color:var(--text2);margin-bottom:16px" id="pdfSelCount"></div>
-    <div class="pdf-options">
-      <div class="pdf-opt active" id="pdfOpt1" onclick="setPdfOpt(1)">
-        <div class="pdf-opt-icon">📋</div>
-        <div class="pdf-opt-title">Laudo Técnico</div>
-        <div class="pdf-opt-desc">Um laudo por ensaio, estilo certificado</div>
-      </div>
-      <div class="pdf-opt" id="pdfOpt2" onclick="setPdfOpt(2)">
-        <div class="pdf-opt-icon">📊</div>
-        <div class="pdf-opt-title">Relatório em Lote</div>
-        <div class="pdf-opt-desc">Tabela consolidada com todos os selecionados</div>
-      </div>
-    </div>
-    <div class="fblock">
-      <label>Título do documento</label>
-      <input type="text" id="pdfTitle" value="Relatório de Ensaios — Röchling Automotive">
-    </div>
-    <div class="fblock">
-      <label>Responsável pela emissão</label>
-      <input type="text" id="pdfIssuer" placeholder="Nome do responsável">
-    </div>
-    <div class="form-actions">
-      <button class="btn btn-ghost" onclick="closeModal('m-pdf')">Cancelar</button>
-      <button class="btn btn-primary" onclick="generatePdf()">📄 Gerar PDF</button>
-    </div>
-  </div>
 </div>
 
 <!-- TOAST -->
-<div class="toast-tray" id="toasts"></div>
+<div class="toast-area" id="toastArea"></div>
 
 <script>
-// ═══════════════════════════════════════════════
-//  DATA
-// ═══════════════════════════════════════════════
-let products = JSON.parse(localStorage.getItem('rqa_products') || '[]');
-let tests    = JSON.parse(localStorage.getItem('rqa_tests')    || '[]');
-let charts   = {};
-let selectedTests = new Set();
-let pdfOpt = 1;
+// ────────────────────────────────────────────────
+// DATA
+// ────────────────────────────────────────────────
+let products = JSON.parse(localStorage.getItem('qa_products') || '[]');
+let tests    = JSON.parse(localStorage.getItem('qa_tests')    || '[]');
 
-// ═══════════════════════════════════════════════
-//  INIT
-// ═══════════════════════════════════════════════
+let trendChart, gaugeChart, productChart, typeChart;
+
+// ────────────────────────────────────────────────
+// INIT
+// ────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  const theme = localStorage.getItem('rqa_theme') || 'dark';
-  document.body.setAttribute('data-theme', theme);
+    const t = localStorage.getItem('qa_theme') || 'dark';
+    applyTheme(t);
 
-  if (!products.length) seedData();
-  buildFilters();
-  refreshDash();
-  renderProds();
-  renderTestsTable();
-  renderReports();
+    if (!products.length) seedData();
 
-  document.getElementById('t-date').value = new Date().toISOString().split('T')[0];
-
-  // Firebase auth observer
-  if (window.__useFirebase) {
-    const { auth, onAuthStateChanged } = window.__firebase;
-    onAuthStateChanged(auth, user => {
-      if (user) {
-        document.getElementById('fbBanner').classList.remove('hidden');
-        document.getElementById('fbAvatar').textContent = user.displayName?.[0] || 'U';
-        document.getElementById('fbName').textContent = user.displayName || user.email;
-        document.getElementById('syncDot').classList.remove('offline');
-        document.getElementById('syncLabel').textContent = 'Firebase ativo';
-        document.getElementById('fbStatusText').textContent = `Logado como ${user.email}`;
-        document.getElementById('fbLoginArea').innerHTML = `<button class="btn btn-sm btn-ghost" onclick="fbSignOut()">Sair da conta</button>`;
-        syncFromFirebase();
-      } else {
-        document.getElementById('fbBanner').classList.add('hidden');
-        document.getElementById('syncDot').classList.add('offline');
-        document.getElementById('syncLabel').textContent = 'Modo local';
-      }
-    });
-  }
-
-  // Close modals on backdrop click
-  document.querySelectorAll('.modal-bg').forEach(bg => {
-    bg.addEventListener('click', e => { if(e.target === bg) bg.classList.remove('open') });
-  });
+    updateFilterOptions();
+    updateDashboard();
+    renderProducts();
+    renderTests();
+    document.getElementById('testDate').value = today();
 });
 
-// ═══════════════════════════════════════════════
-//  SEED DATA
-// ═══════════════════════════════════════════════
+function today() { return new Date().toISOString().split('T')[0]; }
+
 function seedData() {
-  products = [
-    {id:'p1',pn:'PN-001',description:'Aço Carbono GR B',testType:'Tração',unit:'MPa',spec:'≥ 400'},
-    {id:'p2',pn:'PN-002',description:'Aço Inox 304',testType:'Dureza',unit:'HB',spec:'≤ 200'},
-    {id:'p3',pn:'PN-003',description:'Alumínio 6061',testType:'Tração',unit:'MPa',spec:'≥ 270'},
-    {id:'p4',pn:'PN-004',description:'Latão C360',testType:'Impacto',unit:'J',spec:'≥ 50'},
-  ];
-  const reqs  = ['Carlos Souza','Fernanda Lima','Roberto Alves','Patrícia Gomes'];
-  const execs = ['João Silva','Maria Santos','Pedro Costa','Ana Paula'];
-  const now   = new Date();
-  for (let i = 0; i < 60; i++) {
-    const d = new Date(now); d.setDate(d.getDate() - Math.floor(Math.random()*30));
-    const p = products[Math.floor(Math.random()*products.length)];
-    const res = p.testType === 'Dureza' ? (Math.random()*250+80) : (Math.random()*400+150);
-    const sh = 8 + Math.floor(Math.random()*8), sm = Math.floor(Math.random()*60), dur = 15 + Math.floor(Math.random()*45);
-    tests.push({
-      id: 'T'+i,
-      productId: p.id,
-      date: d.toISOString().split('T')[0],
-      requester: reqs[Math.floor(Math.random()*reqs.length)],
-      executor:  execs[Math.floor(Math.random()*execs.length)],
-      result: res.toFixed(2),
-      status: checkApproval(p, res) ? 'Aprovado' : 'Reprovado',
-      startTime: pad(sh)+':'+pad(sm),
-      endTime:   pad(sh + Math.floor(dur/60))+':'+pad((sm+dur%60)%60),
-      notes: '',
-      createdAt: d.toISOString()
-    });
-  }
-  persist();
+    products = [
+        { id:'1', pn:'PN-001', description:'Aço Carbono GR B',  testType:'Tração',  unit:'MPa', spec:'≥ 400' },
+        { id:'2', pn:'PN-002', description:'Aço Inox 304',       testType:'Dureza',  unit:'HB',  spec:'≤ 200' },
+        { id:'3', pn:'PN-003', description:'Alumínio 6061',      testType:'Tração',  unit:'MPa', spec:'≥ 270' },
+        { id:'4', pn:'PN-004', description:'Latão C360',         testType:'Impacto', unit:'J',   spec:'≥ 50'  }
+    ];
+
+    const reqs  = ['Carlos Souza','Fernanda Lima','Roberto Alves','Patrícia Gomes'];
+    const execs = ['João Silva','Maria Santos','Pedro Costa','Ana Paula'];
+    const now   = new Date();
+
+    for (let i = 0; i < 60; i++) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - Math.floor(Math.random() * 30));
+        const p = products[Math.floor(Math.random() * products.length)];
+        const result = p.testType === 'Dureza'
+            ? Math.random() * 300 + 50
+            : Math.random() * 500 + 100;
+
+        const sh = 8 + Math.floor(Math.random() * 8);
+        const sm = Math.floor(Math.random() * 60);
+        const dur = 15 + Math.floor(Math.random() * 45);
+
+        tests.push({
+            id:        'test-' + i,
+            productId: p.id,
+            date:      d.toISOString().split('T')[0],
+            requester: reqs[Math.floor(Math.random() * reqs.length)],
+            executor:  execs[Math.floor(Math.random() * execs.length)],
+            result:    result.toFixed(2),
+            status:    checkApproval(p, result) ? 'Aprovado' : 'Reprovado',
+            startTime: pad(sh) + ':' + pad(sm),
+            endTime:   pad(sh + Math.floor(dur/60)) + ':' + pad((sm + dur%60)%60),
+            notes:     '',
+            createdAt: d.toISOString()
+        });
+    }
+    saveData();
 }
 
-function pad(n){ return String(n).padStart(2,'0') }
+function pad(n) { return String(n).padStart(2,'0'); }
 
 function checkApproval(product, result) {
-  if (!product?.spec) return false;
-  const spec = product.spec.trim();
-  const m = spec.match(/(\d+(?:\.\d+)?)/);
-  if (!m) return false;
-  const v = parseFloat(m[1]), r = parseFloat(result);
-  return spec.includes('≥') ? r >= v : spec.includes('≤') ? r <= v : r >= v;
+    if (!product?.spec) return false;
+    const spec = product.spec.trim();
+    const m = spec.match(/(\d+(?:\.\d+)?)/);
+    if (!m) return false;
+    const val = parseFloat(m[1]);
+    const res = parseFloat(result);
+    if (spec.includes('≥')) return res >= val;
+    if (spec.includes('≤')) return res <= val;
+    return res >= val;
 }
 
-function persist() {
-  localStorage.setItem('rqa_products', JSON.stringify(products));
-  localStorage.setItem('rqa_tests',    JSON.stringify(tests));
-  if (window.__useFirebase && window.__firebase.auth.currentUser) syncToFirebase();
+function saveData() {
+    localStorage.setItem('qa_products', JSON.stringify(products));
+    localStorage.setItem('qa_tests',    JSON.stringify(tests));
 }
 
-// ═══════════════════════════════════════════════
-//  FIREBASE SYNC
-// ═══════════════════════════════════════════════
-async function syncToFirebase() {
-  try {
-    const { db, doc, setDoc, collection } = window.__firebase;
-    await setDoc(doc(db, 'qa_data', 'products'), { data: JSON.stringify(products) });
-    await setDoc(doc(db, 'qa_data', 'tests'),    { data: JSON.stringify(tests) });
-  } catch(e) { console.warn('Firebase sync error', e) }
+// ────────────────────────────────────────────────
+// THEME
+// ────────────────────────────────────────────────
+function applyTheme(t) {
+    document.body.setAttribute('data-theme', t);
+    localStorage.setItem('qa_theme', t);
+    document.getElementById('themeIcon').textContent  = t === 'dark' ? '☀️' : '🌙';
+    document.getElementById('themeLabel').textContent = t === 'dark' ? 'Tema Claro' : 'Tema Escuro';
 }
 
-async function syncFromFirebase() {
-  try {
-    const { db, doc, getDocs, collection } = window.__firebase;
-    const snap = await getDocs(collection(db, 'qa_data'));
-    snap.forEach(d => {
-      if (d.id === 'products') { products = JSON.parse(d.data().data || '[]'); }
-      if (d.id === 'tests')    { tests    = JSON.parse(d.data().data || '[]'); }
-    });
-    localStorage.setItem('rqa_products', JSON.stringify(products));
-    localStorage.setItem('rqa_tests',    JSON.stringify(tests));
-    buildFilters(); refreshDash(); renderProds(); renderTestsTable(); renderReports();
-    toast('Dados sincronizados com Firebase ✓', 'ok');
-  } catch(e) { console.warn('Firebase read error', e) }
-}
-
-async function fbLogin() {
-  if (!window.__useFirebase) { toast('Configure o Firebase primeiro', 'err'); return; }
-  try {
-    const { auth, signInWithPopup, GoogleAuthProvider } = window.__firebase;
-    await signInWithPopup(auth, new GoogleAuthProvider());
-  } catch(e) { toast('Erro no login: ' + e.message, 'err') }
-}
-
-async function fbSignOut() {
-  if (!window.__useFirebase) return;
-  await window.__firebase.signOut(window.__firebase.auth);
-  toast('Desconectado', 'ok');
-}
-
-// ═══════════════════════════════════════════════
-//  NAVIGATION
-// ═══════════════════════════════════════════════
-const pageMeta = {
-  dashboard: { title:'Dashboard', sub:'Visão geral dos ensaios' },
-  products:  { title:'Produtos', sub:'Catálogo de produtos e especificações' },
-  tests:     { title:'Ensaios', sub:'Registro e acompanhamento de ensaios' },
-  reports:   { title:'Relatórios', sub:'Gerar e exportar relatórios PDF' },
-  settings:  { title:'Configurações', sub:'Firebase · GitHub · Dados' },
-};
-
-function nav(page, btn) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('p-'+page).classList.add('active');
-  if (btn) btn.classList.add('active');
-  const m = pageMeta[page];
-  if (m) { document.getElementById('pageTitle').textContent = m.title; document.getElementById('pageSubtitle').textContent = m.sub; }
-  if (page === 'dashboard') refreshDash();
-  if (page === 'reports')   renderReports();
-}
-
-// ═══════════════════════════════════════════════
-//  THEME
-// ═══════════════════════════════════════════════
 function toggleTheme() {
-  const t = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-  document.body.setAttribute('data-theme', t);
-  localStorage.setItem('rqa_theme', t);
-  refreshDash();
+    const cur = document.body.getAttribute('data-theme');
+    applyTheme(cur === 'dark' ? 'light' : 'dark');
+    setTimeout(updateDashboard, 50);
 }
 
-// ═══════════════════════════════════════════════
-//  FILTERS
-// ═══════════════════════════════════════════════
-function buildFilters() {
-  const fp = document.getElementById('f-product');
-  const ft = document.getElementById('f-type');
-  const fe = document.getElementById('f-exec');
-  const tp = document.getElementById('t-prod');
-  [fp,ft,fe].forEach(s => { while(s.options.length > 1) s.remove(1) });
-  while(tp.options.length > 1) tp.remove(1);
-  const types = new Set(), execs = new Set();
-  products.forEach(p => {
-    fp.add(new Option(p.pn + ' — ' + p.description, p.id));
-    tp.add(new Option(p.pn + ' — ' + p.description + ' (' + p.unit + ')', p.id));
-    types.add(p.testType);
-  });
-  tests.forEach(t => execs.add(t.executor));
-  types.forEach(t => ft.add(new Option(t, t)));
-  execs.forEach(e => fe.add(new Option(e, e)));
+// ────────────────────────────────────────────────
+// NAVIGATION
+// ────────────────────────────────────────────────
+const sectionTitles = { dashboard: 'Dashboard', products: 'Produtos', tests: 'Ensaios' };
+
+function showSection(id, el) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if (el) el.classList.add('active');
+    document.getElementById('topbarTitle').textContent = sectionTitles[id];
+    if (id === 'dashboard') updateDashboard();
+    if (id === 'products')  renderProducts();
+    if (id === 'tests')     renderTests();
 }
 
-function filteredTests() {
-  const period  = document.getElementById('f-period').value;
-  const prod    = document.getElementById('f-product').value;
-  const type    = document.getElementById('f-type').value;
-  const exec    = document.getElementById('f-exec').value;
-  let r = [...tests];
-  if (period !== 'all') {
-    const cut = new Date(); cut.setDate(cut.getDate() - +period);
-    r = r.filter(t => new Date(t.date) >= cut);
-  }
-  if (prod !== 'all') r = r.filter(t => t.productId === prod);
-  if (type !== 'all') r = r.filter(t => { const p = products.find(p => p.id===t.productId); return p?.testType === type });
-  if (exec !== 'all') r = r.filter(t => t.executor === exec);
-  return r;
+// ────────────────────────────────────────────────
+// FILTERS
+// ────────────────────────────────────────────────
+function updateFilterOptions() {
+    const pf = document.getElementById('productFilter');
+    const tf = document.getElementById('testTypeFilter');
+    const ef = document.getElementById('executorFilter');
+    const tp = document.getElementById('testProduct');
+
+    [pf, tf, ef, tp].forEach(s => { while(s.options.length > 1) s.remove(1); });
+
+    const types = new Set(), execs = new Set();
+
+    products.forEach(p => {
+        pf.add(new Option(p.pn + ' — ' + p.description, p.id));
+        tp.add(new Option(p.pn + ' — ' + p.description + ' (' + p.unit + ')', p.id));
+        types.add(p.testType);
+    });
+
+    tests.forEach(t => execs.add(t.executor));
+    types.forEach(t => tf.add(new Option(t, t)));
+    execs.forEach(e => ef.add(new Option(e, e)));
 }
 
 function resetFilters() {
-  ['f-period','f-product','f-type','f-exec'].forEach(id => {
-    const el = document.getElementById(id);
-    el.value = id === 'f-period' ? '30' : 'all';
-  });
-  refreshDash();
+    document.getElementById('periodFilter').value = '30';
+    document.getElementById('productFilter').value = 'all';
+    document.getElementById('testTypeFilter').value = 'all';
+    document.getElementById('executorFilter').value = 'all';
+    updateDashboard();
 }
 
-// ═══════════════════════════════════════════════
-//  DASHBOARD
-// ═══════════════════════════════════════════════
-function refreshDash() {
-  const ft = filteredTests();
-  renderKpis(ft);
-  renderTrend(ft);
-  renderGauge(ft);
-  renderProductChart(ft);
-  renderTypeChart(ft);
-  renderLists(ft);
-}
-
-function renderKpis(ft) {
-  const total = ft.length;
-  const ok    = ft.filter(t => t.status === 'Aprovado').length;
-  const fail  = total - ok;
-  const rate  = total ? (ok/total*100).toFixed(1) : 0;
-  const uniqE = new Set(ft.map(t => t.executor)).size;
-  const durs  = ft.map(t => {
-    const s = new Date(t.date+'T'+t.startTime), e = new Date(t.date+'T'+t.endTime);
-    return Math.max(0, (e-s)/60000);
-  }).filter(d => d > 0);
-  const avgD = durs.length ? Math.round(durs.reduce((a,b)=>a+b,0)/durs.length) : 0;
-  const kpis = [
-    {l:'Total',v:total,      icon:'🧪',c:'var(--accent2)'},
-    {l:'Aprovados',v:ok,     icon:'✓', c:'var(--green)'},
-    {l:'Reprovados',v:fail,  icon:'✕', c:'var(--red)'},
-    {l:'Taxa',v:rate+'%',    icon:'📈',c:'var(--purple)'},
-    {l:'Executantes',v:uniqE,icon:'👥',c:'var(--accent2)'},
-    {l:'Duração Média',v:avgD+' min',icon:'⏱',c:'var(--amber)'},
-  ];
-  document.getElementById('kpiGrid').innerHTML = kpis.map(k => `
-    <div class="kpi" style="--kpi-color:${k.c}">
-      <div>
-        <div class="kpi-label">${k.l}</div>
-        <div class="kpi-val">${k.v}</div>
-      </div>
-      <div class="kpi-icon">${k.icon}</div>
-    </div>`).join('');
-}
-
-const isDark = () => document.body.getAttribute('data-theme') === 'dark';
-const txtColor  = () => isDark() ? '#8899b4' : '#64748b';
-const gridColor = () => isDark() ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
-const legColor  = () => isDark() ? '#e8edf5' : '#0d1525';
-
-function renderTrend(ft) {
-  const days = document.getElementById('f-period').value;
-  const n = days === 'all' ? 30 : +days;
-  const labels = [], ok = [], fail = [];
-  for (let i = n-1; i >= 0; i--) {
-    const d = new Date(); d.setDate(d.getDate()-i);
-    const ds = d.toISOString().split('T')[0];
-    const day = ft.filter(t => t.date === ds);
-    labels.push(d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}));
-    ok.push(day.filter(t => t.status==='Aprovado').length);
-    fail.push(day.filter(t => t.status==='Reprovado').length);
-  }
-  if (charts.trend) charts.trend.destroy();
-  charts.trend = new Chart(document.getElementById('c-trend'), {
-    type:'line',
-    data:{
-      labels,
-      datasets:[
-        {label:'Aprovado',data:ok,  borderColor:'#10b981',backgroundColor:'rgba(16,185,129,0.08)',fill:true,tension:0.45,pointRadius:2,pointHoverRadius:5},
-        {label:'Reprovado',data:fail,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,0.08)',fill:true,tension:0.45,pointRadius:2,pointHoverRadius:5},
-      ]
-    },
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{labels:{color:legColor(),font:{family:'DM Sans',size:11}}}},
-      scales:{
-        x:{ticks:{color:txtColor(),font:{size:10}},grid:{color:gridColor()}},
-        y:{ticks:{color:txtColor(),font:{size:10},stepSize:1},grid:{color:gridColor()}}
-      }
+function getFilteredTests() {
+    const period    = document.getElementById('periodFilter').value;
+    const prodF     = document.getElementById('productFilter').value;
+    const typeF     = document.getElementById('testTypeFilter').value;
+    const execF     = document.getElementById('executorFilter').value;
+    let f = [...tests];
+    if (period !== 'all') {
+        const cut = new Date();
+        cut.setDate(cut.getDate() - parseInt(period));
+        f = f.filter(t => new Date(t.date) >= cut);
     }
-  });
-}
-
-function renderGauge(ft) {
-  const total = ft.length, ok = ft.filter(t => t.status==='Aprovado').length;
-  const rate = total ? Math.round(ok/total*100) : 0;
-  document.getElementById('gPct').textContent = rate + '%';
-  document.getElementById('gOk').textContent   = ok;
-  document.getElementById('gFail').textContent  = total-ok;
-  if (charts.gauge) charts.gauge.destroy();
-  charts.gauge = new Chart(document.getElementById('c-gauge'), {
-    type:'doughnut',
-    data:{
-      labels:['Aprovação','Restante'],
-      datasets:[{
-        data:[rate, 100-rate],
-        backgroundColor:['#10b981', isDark() ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)'],
-        borderWidth:0,
-        circumference:180, rotation:-90,
-      }]
-    },
-    options:{
-      responsive:true,maintainAspectRatio:false,cutout:'78%',
-      plugins:{legend:{display:false},tooltip:{enabled:false}}
+    if (prodF !== 'all') f = f.filter(t => t.productId === prodF);
+    if (typeF !== 'all') {
+        f = f.filter(t => {
+            const p = products.find(p => p.id === t.productId);
+            return p?.testType === typeF;
+        });
     }
-  });
+    if (execF !== 'all') f = f.filter(t => t.executor === execF);
+    return f;
 }
 
-function renderProductChart(ft) {
-  const map = new Map();
-  ft.forEach(t => {
-    const p = products.find(p => p.id===t.productId); if (!p) return;
-    if (!map.has(p.pn)) map.set(p.pn, {ok:0,fail:0});
-    map.get(p.pn)[t.status==='Aprovado'?'ok':'fail']++;
-  });
-  const sorted = [...map.entries()].sort((a,b)=>(b[1].ok+b[1].fail)-(a[1].ok+a[1].fail)).slice(0,8);
-  if (charts.prod) charts.prod.destroy();
-  charts.prod = new Chart(document.getElementById('c-product'), {
-    type:'bar',
-    data:{
-      labels: sorted.map(([pn])=>pn),
-      datasets:[
-        {label:'Aprovado',data:sorted.map(([,d])=>d.ok),  backgroundColor:'#10b981',stack:'s'},
-        {label:'Reprovado',data:sorted.map(([,d])=>d.fail),backgroundColor:'#ef4444',stack:'s',borderRadius:{topLeft:4,topRight:4}},
-      ]
-    },
-    options:{
-      indexAxis:'y',responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{labels:{color:legColor(),font:{family:'DM Sans',size:11}}}},
-      scales:{
-        x:{stacked:true,ticks:{color:txtColor(),font:{size:10}},grid:{color:gridColor()}},
-        y:{stacked:true,ticks:{color:txtColor(),font:{size:10}},grid:{display:false}},
-      }
+// ────────────────────────────────────────────────
+// DASHBOARD
+// ────────────────────────────────────────────────
+function updateDashboard() {
+    const f = getFilteredTests();
+    renderKPIs(f);
+    renderTrendChart(f);
+    renderGaugeChart(f);
+    renderProductChart(f);
+    renderTypeChart(f);
+    renderRejectedList(f);
+    renderRecentList(f);
+}
+
+function isDark() { return document.body.getAttribute('data-theme') === 'dark'; }
+function chartColors() {
+    return {
+        text:   isDark() ? '#b0bfd8' : '#3a4f6a',
+        grid:   isDark() ? '#1e2a3a' : '#dde4f0',
+        legend: isDark() ? '#e8f0ff' : '#0d1626',
+    };
+}
+
+// KPIs
+function renderKPIs(f) {
+    const total    = f.length;
+    const approved = f.filter(t => t.status === 'Aprovado').length;
+    const rejected = total - approved;
+    const rate     = total ? (approved / total * 100).toFixed(1) : 0;
+    const execs    = new Set(f.map(t => t.executor)).size;
+    const durs     = f.map(t => {
+        const s = new Date(t.date + 'T' + t.startTime);
+        const e = new Date(t.date + 'T' + t.endTime);
+        return Math.max(0, (e - s) / 60000);
+    }).filter(d => d > 0);
+    const avgDur = durs.length ? Math.round(durs.reduce((a,b) => a+b, 0) / durs.length) : 0;
+
+    const kpis = [
+        { label: 'Total Ensaios',    value: total,        color: 'c-primary',  icon: '◉' },
+        { label: 'Aprovados',        value: approved,     color: 'c-success',  icon: '✓' },
+        { label: 'Reprovados',       value: rejected,     color: 'c-danger',   icon: '✕' },
+        { label: 'Taxa Aprovação',   value: rate + '%',   color: 'c-accent',   icon: '↑' },
+        { label: 'Executantes',      value: execs,        color: 'c-primary',  icon: '👤' },
+        { label: 'Duração Média',    value: avgDur+'min', color: 'c-warning',  icon: '⏱' },
+    ];
+
+    document.getElementById('kpiGrid').innerHTML = kpis.map(k => `
+        <div class="kpi-card ${k.color}">
+            <div class="kpi-label">${k.label}</div>
+            <div class="kpi-value ${k.color}">${k.value}</div>
+            <div class="kpi-icon">${k.icon}</div>
+        </div>
+    `).join('');
+}
+
+// Trend chart
+function renderTrendChart(f) {
+    const ctx  = document.getElementById('trendChart').getContext('2d');
+    const days = parseInt(document.getElementById('periodFilter').value) || 30;
+    const cc   = chartColors();
+
+    const dates = [], approved = [], rejected = [];
+    for (let i = days - 1; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const ds  = d.toISOString().split('T')[0];
+        const day = f.filter(t => t.date === ds);
+        dates.push(d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' }));
+        approved.push(day.filter(t => t.status === 'Aprovado').length);
+        rejected.push(day.filter(t => t.status === 'Reprovado').length);
     }
-  });
-}
 
-function renderTypeChart(ft) {
-  const map = new Map();
-  ft.forEach(t => { const p = products.find(p => p.id===t.productId); if(p) map.set(p.testType,(map.get(p.testType)||0)+1) });
-  if (charts.type) charts.type.destroy();
-  charts.type = new Chart(document.getElementById('c-type'), {
-    type:'doughnut',
-    data:{
-      labels:[...map.keys()],
-      datasets:[{data:[...map.values()],backgroundColor:['#2563eb','#8b5cf6','#10b981','#f59e0b','#ef4444'],borderWidth:0}]
-    },
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{position:'bottom',labels:{color:legColor(),font:{family:'DM Sans',size:10},padding:8}}}
-    }
-  });
-}
-
-function renderLists(ft) {
-  // Rejected list
-  const map = new Map();
-  ft.forEach(t => {
-    const p = products.find(pr => pr.id===t.productId); if (!p) return;
-    if (!map.has(p.pn)) map.set(p.pn, {name:p.pn,fail:0,total:0});
-    const d = map.get(p.pn);
-    if (t.status==='Reprovado') d.fail++;
-    d.total++;
-  });
-  const top = [...map.values()].filter(p=>p.fail>0).sort((a,b)=>b.fail-a.fail).slice(0,5);
-  const rl = document.getElementById('list-rejected');
-  rl.innerHTML = top.length === 0
-    ? '<div class="empty"><div class="empty-icon">🎉</div><div>Nenhuma reprovação no período</div></div>'
-    : top.map(p => {
-        const pct = (p.fail/p.total*100).toFixed(0);
-        return `<div style="padding:12px 0;border-bottom:1px solid var(--border)">
-          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-            <span style="font-family:var(--font-mono);font-size:12.5px;font-weight:500">${p.name}</span>
-            <span style="font-size:12px;color:var(--text2)">${p.fail}/${p.total} <span class="badge badge-fail">${pct}%</span></span>
-          </div>
-          <div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div>
-        </div>`;
-      }).join('') + '';
-
-  // Recent tests
-  const recent = [...ft].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).slice(0,5);
-  const rr = document.getElementById('list-recent');
-  rr.innerHTML = recent.length === 0
-    ? '<div class="empty"><div>Nenhum ensaio no período</div></div>'
-    : recent.map(t => {
-        const p = products.find(pr => pr.id===t.productId);
-        return `<div class="test-row">
-          <div>
-            <div class="test-pn">${p?.pn||'—'} <span class="badge ${t.status==='Aprovado'?'badge-ok':'badge-fail'}">${t.status}</span></div>
-            <div class="test-meta">${p?.testType||'—'} · ${t.executor} · ${t.date}</div>
-          </div>
-          <div>
-            <div class="test-val">${t.result} ${p?.unit||''}</div>
-            <div class="test-time">${t.startTime}–${t.endTime}</div>
-          </div>
-        </div>`;
-      }).join('');
-}
-
-// ═══════════════════════════════════════════════
-//  PRODUCTS
-// ═══════════════════════════════════════════════
-function renderProds() {
-  const q = (document.getElementById('prod-search')?.value || '').toLowerCase();
-  const f = products.filter(p => p.pn.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
-  document.getElementById('prodCount').textContent = f.length + ' produto(s)';
-  document.getElementById('prodTbody').innerHTML = f.length === 0
-    ? '<tr><td colspan="7"><div class="empty"><div class="empty-icon">📦</div><div>Nenhum produto encontrado</div></div></td></tr>'
-    : f.map(p => {
-        const cnt = tests.filter(t => t.productId===p.id).length;
-        return `<tr>
-          <td><span style="font-family:var(--font-mono);font-weight:500">${p.pn}</span></td>
-          <td>${p.description}</td>
-          <td><span class="badge badge-blue">${p.testType}</span></td>
-          <td>${p.unit||'-'}</td>
-          <td><span style="font-family:var(--font-mono)">${p.spec} ${p.unit||''}</span></td>
-          <td>${cnt}</td>
-          <td>
-            <div style="display:flex;gap:6px">
-              <button class="btn btn-sm btn-icon" onclick="editProd('${p.id}')" title="Editar">✏️</button>
-              <button class="btn btn-sm btn-icon btn-danger" onclick="delProd('${p.id}')" title="Excluir">🗑</button>
-            </div>
-          </td>
-        </tr>`;
-      }).join('');
-}
-
-function openProdModal(id=null) {
-  ['p-id','p-pn','p-unit','p-desc','p-ttype','p-spec'].forEach(i => document.getElementById(i).value = '');
-  document.getElementById('prodModalTitle').textContent = 'Novo Produto';
-  if (id) {
-    const p = products.find(p => p.id===id); if (!p) return;
-    document.getElementById('prodModalTitle').textContent = 'Editar Produto';
-    document.getElementById('p-id').value    = p.id;
-    document.getElementById('p-pn').value    = p.pn;
-    document.getElementById('p-unit').value  = p.unit || '';
-    document.getElementById('p-desc').value  = p.description;
-    document.getElementById('p-ttype').value = p.testType;
-    document.getElementById('p-spec').value  = p.spec;
-  }
-  document.getElementById('m-prod').classList.add('open');
-}
-
-function editProd(id) { openProdModal(id) }
-
-function saveProd() {
-  const id   = document.getElementById('p-id').value;
-  const pn   = document.getElementById('p-pn').value.trim();
-  const unit = document.getElementById('p-unit').value.trim();
-  const desc = document.getElementById('p-desc').value.trim();
-  const tt   = document.getElementById('p-ttype').value.trim();
-  const spec = document.getElementById('p-spec').value.trim();
-  if (!pn||!desc||!tt||!spec) { toast('Preencha todos os campos obrigatórios','err'); return }
-  const data = { id: id||'p'+Date.now(), pn, unit, description:desc, testType:tt, spec, createdAt:new Date().toISOString() };
-  if (id) {
-    const i = products.findIndex(p => p.id===id);
-    if (i!==-1) { products[i] = {...products[i],...data}; reCalcStatus(id) }
-  } else {
-    products.push(data);
-  }
-  persist(); closeModal('m-prod'); renderProds(); buildFilters(); refreshDash();
-  toast(id?'Produto atualizado':'Produto criado','ok');
-}
-
-function delProd(id) {
-  if (!confirm('Excluir produto e todos os ensaios associados?')) return;
-  products = products.filter(p => p.id!==id);
-  tests    = tests.filter(t => t.productId!==id);
-  persist(); renderProds(); buildFilters(); refreshDash();
-  toast('Produto excluído','ok');
-}
-
-function reCalcStatus(productId) {
-  const p = products.find(p => p.id===productId); if (!p) return;
-  tests = tests.map(t => {
-    if (t.productId===productId) return {...t, status: checkApproval(p,parseFloat(t.result)) ? 'Aprovado' : 'Reprovado'};
-    return t;
-  });
-}
-
-// ═══════════════════════════════════════════════
-//  TESTS
-// ═══════════════════════════════════════════════
-function renderTestsTable() {
-  const q = (document.getElementById('test-search')?.value||'').toLowerCase();
-  const f = tests.filter(t => {
-    const p = products.find(p => p.id===t.productId);
-    return p && (p.pn.toLowerCase().includes(q)||t.requester?.toLowerCase().includes(q)||t.executor.toLowerCase().includes(q));
-  }).sort((a,b)=>new Date(b.date)-new Date(a.date));
-  document.getElementById('testCount').textContent = f.length + ' ensaio(s)';
-  document.getElementById('testTbody').innerHTML = f.length === 0
-    ? '<tr><td colspan="13"><div class="empty"><div class="empty-icon">🧪</div><div>Nenhum ensaio encontrado</div></div></td></tr>'
-    : f.map(t => {
-        const p = products.find(p => p.id===t.productId);
-        const sc = t.status==='Aprovado' ? 'badge-ok' : 'badge-fail';
-        const sel = selectedTests.has(t.id) ? 'selected' : '';
-        return `<tr class="sel-row ${sel}" data-id="${t.id}" onclick="toggleSel('${t.id}',this)">
-          <td><div class="sel-indicator">${selectedTests.has(t.id)?'✓':''}</div></td>
-          <td>${t.date}</td>
-          <td><span style="font-family:var(--font-mono);font-weight:500">${p?.pn||'—'}</span></td>
-          <td>${p?.testType||'—'}</td>
-          <td><span style="font-family:var(--font-mono)">${p?.spec||'—'} ${p?.unit||''}</span></td>
-          <td>${t.requester||'—'}</td>
-          <td>${t.executor}</td>
-          <td>${t.startTime}</td>
-          <td>${t.endTime}</td>
-          <td><span style="font-family:var(--font-mono)">${t.result} ${p?.unit||''}</span></td>
-          <td><span class="badge ${sc}">${t.status}</span></td>
-          <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;color:var(--text3)">${t.notes||'—'}</td>
-          <td>
-            <div style="display:flex;gap:6px">
-              <button class="btn btn-sm btn-icon" onclick="editTestFn('${t.id}',event)" title="Editar">✏️</button>
-              <button class="btn btn-sm btn-icon btn-danger" onclick="delTest('${t.id}',event)" title="Excluir">🗑</button>
-            </div>
-          </td>
-        </tr>`;
-      }).join('');
-}
-
-function toggleSel(id, row) {
-  if (selectedTests.has(id)) { selectedTests.delete(id); row.classList.remove('selected'); row.querySelector('.sel-indicator').textContent='' }
-  else { selectedTests.add(id); row.classList.add('selected'); row.querySelector('.sel-indicator').textContent='✓' }
-}
-
-function toggleSelAll(cb) {
-  const rows = document.querySelectorAll('.sel-row');
-  rows.forEach(row => {
-    const id = row.dataset.id;
-    if (cb.checked) { selectedTests.add(id); row.classList.add('selected'); row.querySelector('.sel-indicator').textContent='✓' }
-    else { selectedTests.delete(id); row.classList.remove('selected'); row.querySelector('.sel-indicator').textContent='' }
-  });
-}
-
-function openTestModal() {
-  ['t-id','t-prod','t-req','t-exec','t-res','t-notes'].forEach(i => { const el=document.getElementById(i); if(el) el.value=''; });
-  ['t-start','t-end'].forEach(i => { document.getElementById(i).value=''; });
-  document.getElementById('t-date').value = new Date().toISOString().split('T')[0];
-  document.getElementById('testModalTitle').textContent = 'Novo Ensaio';
-  document.getElementById('t-spec-hint').textContent = '';
-  document.getElementById('m-test').classList.add('open');
-}
-
-function editTestFn(id, e) {
-  e.stopPropagation();
-  const t = tests.find(t => t.id===id); if (!t) return;
-  document.getElementById('testModalTitle').textContent = 'Editar Ensaio';
-  document.getElementById('t-id').value    = t.id;
-  document.getElementById('t-prod').value  = t.productId;
-  document.getElementById('t-date').value  = t.date;
-  document.getElementById('t-req').value   = t.requester||'';
-  document.getElementById('t-exec').value  = t.executor;
-  document.getElementById('t-res').value   = t.result;
-  document.getElementById('t-start').value = t.startTime;
-  document.getElementById('t-end').value   = t.endTime;
-  document.getElementById('t-notes').value = t.notes||'';
-  onProdChange();
-  document.getElementById('m-test').classList.add('open');
-}
-
-function delTest(id, e) {
-  e.stopPropagation();
-  if (!confirm('Excluir este ensaio?')) return;
-  tests = tests.filter(t => t.id!==id);
-  persist(); renderTestsTable(); refreshDash(); renderReports();
-  toast('Ensaio excluído','ok');
-}
-
-function onProdChange() {
-  const p = products.find(p => p.id===document.getElementById('t-prod').value);
-  document.getElementById('t-spec-hint').textContent = p ? `Especificação: ${p.spec} ${p.unit}` : '';
-}
-
-function saveTest() {
-  const id = document.getElementById('t-id').value;
-  const pId = document.getElementById('t-prod').value;
-  const res = parseFloat(document.getElementById('t-res').value);
-  const p = products.find(p => p.id===pId);
-  if (!p) { toast('Selecione um produto','err'); return; }
-  const data = {
-    id: id||'T'+Date.now(),
-    productId: pId,
-    date:     document.getElementById('t-date').value,
-    requester:document.getElementById('t-req').value,
-    executor: document.getElementById('t-exec').value,
-    result:   res.toFixed(2),
-    status:   checkApproval(p,res) ? 'Aprovado' : 'Reprovado',
-    startTime:document.getElementById('t-start').value,
-    endTime:  document.getElementById('t-end').value,
-    notes:    document.getElementById('t-notes').value,
-    createdAt: id ? (tests.find(t=>t.id===id)?.createdAt||new Date().toISOString()) : new Date().toISOString()
-  };
-  if (!data.date||!data.executor||isNaN(res)) { toast('Preencha os campos obrigatórios','err'); return; }
-  if (id) { const i=tests.findIndex(t=>t.id===id); if(i!==-1) tests[i]={...tests[i],...data}; }
-  else tests.push(data);
-  persist(); closeModal('m-test'); renderTestsTable(); refreshDash(); renderReports();
-  toast(id?'Ensaio atualizado':'Ensaio registrado','ok');
-}
-
-// ═══════════════════════════════════════════════
-//  REPORTS TABLE
-// ═══════════════════════════════════════════════
-function renderReports() {
-  const map = new Map();
-  tests.forEach(t => {
-    const p = products.find(p => p.id===t.productId); if(!p) return;
-    if (!map.has(p.id)) map.set(p.id, {p, ok:0, fail:0});
-    map.get(p.id)[t.status==='Aprovado'?'ok':'fail']++;
-  });
-  const tbody = document.getElementById('reportTbody');
-  if (!tbody) return;
-  tbody.innerHTML = [...map.values()].sort((a,b)=>(b.ok+b.fail)-(a.ok+a.fail)).map(({p,ok,fail}) => {
-    const total = ok+fail, rate = total ? (ok/total*100).toFixed(0) : 0;
-    return `<tr>
-      <td><span style="font-family:var(--font-mono);font-weight:500">${p.pn}</span></td>
-      <td>${p.description}</td>
-      <td><span class="badge badge-blue">${p.testType}</span></td>
-      <td>${total}</td>
-      <td style="color:var(--green)">${ok}</td>
-      <td style="color:var(--red)">${fail}</td>
-      <td><span class="badge ${+rate>=80?'badge-ok':'badge-fail'}">${rate}%</span></td>
-    </tr>`;
-  }).join('') || '<tr><td colspan="7"><div class="empty">Sem dados</div></td></tr>';
-}
-
-// ═══════════════════════════════════════════════
-//  PDF GENERATION
-// ═══════════════════════════════════════════════
-function openPdfModal() {
-  const cnt = selectedTests.size;
-  document.getElementById('pdfSelCount').textContent =
-    cnt === 0 ? '⚠ Nenhum ensaio selecionado — serão incluídos todos do período.'
-              : `${cnt} ensaio(s) selecionado(s).`;
-  document.getElementById('m-pdf').classList.add('open');
-}
-
-function setPdfOpt(n) {
-  pdfOpt = n;
-  document.getElementById('pdfOpt1').classList.toggle('active', n===1);
-  document.getElementById('pdfOpt2').classList.toggle('active', n===2);
-}
-
-function genPdfAll() {
-  selectedTests.clear();
-  openPdfModal();
-}
-
-function generatePdf() {
-  const { jsPDF } = window.jspdf;
-  const title  = document.getElementById('pdfTitle').value || 'Relatório de Ensaios';
-  const issuer = document.getElementById('pdfIssuer').value || '—';
-  const now    = new Date().toLocaleString('pt-BR');
-
-  let list = selectedTests.size > 0
-    ? tests.filter(t => selectedTests.has(t.id))
-    : filteredTests();
-
-  if (!list.length) { toast('Nenhum ensaio para gerar PDF','err'); return; }
-
-  const doc = new jsPDF({ orientation: pdfOpt===2 ? 'landscape' : 'portrait', unit:'mm', format:'a4' });
-
-  if (pdfOpt === 1) {
-    // ── LAUDO TÉCNICO (individual pages) ──
-    list.forEach((t, idx) => {
-      if (idx > 0) doc.addPage();
-      const p = products.find(p => p.id===t.productId);
-      pdfLaudo(doc, t, p, title, issuer, now, idx+1, list.length);
+    if (trendChart) trendChart.destroy();
+    trendChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [
+                { label:'Aprovado',  data: approved, borderColor:'#22d3a0', backgroundColor:'rgba(34,211,160,0.08)', fill:true, tension:0.4, pointRadius:3, borderWidth:2 },
+                { label:'Reprovado', data: rejected, borderColor:'#ff5a6e', backgroundColor:'rgba(255,90,110,0.08)',  fill:true, tension:0.4, pointRadius:3, borderWidth:2 }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { labels: { color: cc.legend, font:{ size:11 } } } },
+            scales: {
+                x: { ticks: { color: cc.text, font:{size:10} }, grid: { color: cc.grid } },
+                y: { ticks: { color: cc.text, font:{size:10} }, grid: { color: cc.grid }, beginAtZero: true }
+            }
+        }
     });
-  } else {
-    // ── RELATÓRIO EM LOTE ──
-    pdfBatch(doc, list, title, issuer, now);
-  }
-
-  doc.save(`ensaios_${new Date().toISOString().split('T')[0]}.pdf`);
-  closeModal('m-pdf');
-  toast('PDF gerado com sucesso ✓','ok');
 }
 
-function pdfLaudo(doc, t, p, title, issuer, now, idx, total) {
-  const W = 210, M = 18;
-  const blue = [37, 99, 235], dark = [13, 21, 37], gray = [100, 116, 139], light = [240, 244, 250];
-  const ok = t.status === 'Aprovado';
+// Gauge
+function renderGaugeChart(f) {
+    const ctx      = document.getElementById('gaugeChart').getContext('2d');
+    const total    = f.length;
+    const approved = f.filter(t => t.status === 'Aprovado').length;
+    const rate     = total ? Math.round(approved / total * 100) : 0;
 
-  // Header bar
-  doc.setFillColor(...blue);
-  doc.rect(0, 0, W, 28, 'F');
+    document.getElementById('gaugeValue').textContent    = rate + '%';
+    document.getElementById('gaugeApproved').textContent = approved;
+    document.getElementById('gaugeRejected').textContent = total - approved;
 
-  // Company name
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(15);
-  doc.setTextColor(255, 255, 255);
-  doc.text('RÖCHLING AUTOMOTIVE', M, 11);
+    if (gaugeChart) gaugeChart.destroy();
+    gaugeChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Aprovação', 'Restante'],
+            datasets: [{
+                data: [rate, 100 - rate],
+                backgroundColor: ['#22d3a0', isDark() ? '#1e2a3a' : '#dde4f0'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            cutout: '78%',
+            rotation: -90, circumference: 180,
+            plugins: { legend: { display:false }, tooltip: { enabled: false } }
+        }
+    });
+}
 
-  doc.setFontSize(8.5);
-  doc.setFont('helvetica', 'normal');
-  doc.text('Sistema de Gestão de Ensaios', M, 17);
+// Product chart
+function renderProductChart(f) {
+    const ctx = document.getElementById('productChart').getContext('2d');
+    const cc  = chartColors();
+    const map = new Map();
 
-  // Page number
-  doc.setFontSize(8);
-  doc.text(`${idx} / ${total}`, W - M, 11, {align:'right'});
-
-  // Title block
-  doc.setFillColor(...dark);
-  doc.rect(0, 28, W, 16, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(13);
-  doc.setTextColor(255,255,255);
-  doc.text('LAUDO TÉCNICO DE ENSAIO', W/2, 39, {align:'center'});
-
-  // Status badge
-  const statusColor = ok ? [16, 185, 129] : [239, 68, 68];
-  doc.setFillColor(...statusColor);
-  doc.roundedRect(W - M - 28, 47, 30, 9, 2, 2, 'F');
-  doc.setFont('helvetica','bold');
-  doc.setFontSize(8);
-  doc.setTextColor(255,255,255);
-  doc.text(t.status.toUpperCase(), W - M - 13, 53.5, {align:'center'});
-
-  let y = 50;
-
-  // Sections
-  const section = (title, data) => {
-    // Section title
-    doc.setFillColor(...light);
-    doc.rect(M, y, W - M*2, 7, 'F');
-    doc.setFont('helvetica','bold');
-    doc.setFontSize(8);
-    doc.setTextColor(...blue);
-    doc.text(title, M + 3, y + 5);
-    y += 10;
-
-    // Fields in 2 columns
-    const cols = Math.ceil(data.length / 2);
-    data.forEach((item, i) => {
-      const col = Math.floor(i / cols);
-      const row = i % cols;
-      const x = M + col * (W/2 - M);
-      const fy = y + row * 10;
-
-      doc.setFont('helvetica','normal');
-      doc.setFontSize(7.5);
-      doc.setTextColor(...gray);
-      doc.text(item.label, x, fy);
-
-      doc.setFont('helvetica','bold');
-      doc.setFontSize(9);
-      doc.setTextColor(...dark);
-      doc.text(String(item.value), x, fy + 5);
+    f.forEach(t => {
+        const p = products.find(p => p.id === t.productId);
+        if (!p) return;
+        if (!map.has(p.pn)) map.set(p.pn, { a:0, r:0 });
+        const d = map.get(p.pn);
+        t.status === 'Aprovado' ? d.a++ : d.r++;
     });
 
-    y += cols * 10 + 6;
-  };
+    const sorted = [...map.entries()].sort((a,b) => (b[1].a+b[1].r) - (a[1].a+a[1].r)).slice(0,8);
 
-  section('IDENTIFICAÇÃO DO PRODUTO', [
-    {label:'Part Number (PN)', value: p?.pn || '—'},
-    {label:'Descrição', value: p?.description || '—'},
-    {label:'Tipo de Ensaio', value: p?.testType || '—'},
-    {label:'Especificação Técnica', value: `${p?.spec || '—'} ${p?.unit || ''}`},
-  ]);
-
-  section('DADOS DO ENSAIO', [
-    {label:'Data', value: t.date},
-    {label:'Início', value: t.startTime},
-    {label:'Término', value: t.endTime},
-    {label:'Duração', value: (() => { try { const s=new Date(t.date+'T'+t.startTime),e=new Date(t.date+'T'+t.endTime); return Math.max(0,(e-s)/60000)+' min'; } catch{return '—';} })()},
-    {label:'Solicitante', value: t.requester||'—'},
-    {label:'Executante', value: t.executor||'—'},
-  ]);
-
-  // Result highlight
-  doc.setFillColor(ok ? 16 : 239, ok ? 185 : 68, ok ? 129 : 68, 0.1);
-  const rBox = y;
-  doc.setDrawColor(...statusColor);
-  doc.setLineWidth(0.5);
-  doc.roundedRect(M, y, W - M*2, 22, 3, 3);
-  doc.setFont('helvetica','bold');
-  doc.setFontSize(10);
-  doc.setTextColor(...dark);
-  doc.text('RESULTADO OBTIDO', M + 6, y + 8);
-  doc.setFont('helvetica','bold');
-  doc.setFontSize(22);
-  doc.setTextColor(...statusColor);
-  doc.text(`${t.result} ${p?.unit||''}`, M + 6, y + 19);
-  doc.setFont('helvetica','normal');
-  doc.setFontSize(9);
-  doc.setTextColor(...gray);
-  doc.text(`Especificação: ${p?.spec||'—'} ${p?.unit||''}`, W/2, y + 19, {align:'center'});
-  y += 28;
-
-  if (t.notes) {
-    doc.setFillColor(...light);
-    doc.rect(M, y, W - M*2, 16, 'F');
-    doc.setFont('helvetica','bold');
-    doc.setFontSize(7.5);
-    doc.setTextColor(...gray);
-    doc.text('OBSERVAÇÕES', M + 3, y + 5);
-    doc.setFont('helvetica','normal');
-    doc.setFontSize(8.5);
-    doc.setTextColor(...dark);
-    doc.text(t.notes, M + 3, y + 12);
-    y += 22;
-  }
-
-  // Footer
-  const footY = 277;
-  doc.setDrawColor(...light);
-  doc.setLineWidth(0.3);
-  doc.line(M, footY - 5, W - M, footY - 5);
-  doc.setFont('helvetica','normal');
-  doc.setFontSize(7.5);
-  doc.setTextColor(...gray);
-  doc.text(`Emitido por: ${issuer}`, M, footY);
-  doc.text(`Gerado em: ${now}`, W/2, footY, {align:'center'});
-  doc.text('Röchling Automotive — Documento Interno', W - M, footY, {align:'right'});
+    if (productChart) productChart.destroy();
+    productChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: sorted.map(([pn]) => pn),
+            datasets: [
+                { label:'Aprovado',  data: sorted.map(([,d]) => d.a), backgroundColor:'#22d3a0', stack:'s' },
+                { label:'Reprovado', data: sorted.map(([,d]) => d.r), backgroundColor:'#ff5a6e', stack:'s' }
+            ]
+        },
+        options: {
+            indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { labels: { color: cc.legend, font:{size:11} } } },
+            scales: {
+                x: { stacked:true, ticks:{color:cc.text,font:{size:10}}, grid:{color:cc.grid} },
+                y: { stacked:true, ticks:{color:cc.text,font:{size:10}}, grid:{display:false} }
+            }
+        }
+    });
 }
 
-function pdfBatch(doc, list, title, issuer, now) {
-  const W = 297, M = 14;
-  const blue=[37,99,235], dark=[13,21,37], gray=[100,116,139], light=[240,244,250];
+// Type chart
+function renderTypeChart(f) {
+    const ctx = document.getElementById('typeChart').getContext('2d');
+    const map = new Map();
+    f.forEach(t => {
+        const p = products.find(p => p.id === t.productId);
+        if (!p) return;
+        map.set(p.testType, (map.get(p.testType)||0) + 1);
+    });
 
-  // Header
-  doc.setFillColor(...blue);
-  doc.rect(0, 0, W, 22, 'F');
-  doc.setFont('helvetica','bold');
-  doc.setFontSize(13);
-  doc.setTextColor(255,255,255);
-  doc.text('RÖCHLING AUTOMOTIVE', M, 10);
-  doc.setFont('helvetica','normal');
-  doc.setFontSize(8);
-  doc.text(title, M, 17);
-  doc.text(`Emitido: ${now} | Responsável: ${issuer}`, W - M, 17, {align:'right'});
-
-  // Stats summary
-  const ok = list.filter(t=>t.status==='Aprovado').length;
-  const fail = list.length - ok;
-  const rate = list.length ? (ok/list.length*100).toFixed(1) : 0;
-  doc.setFillColor(...dark);
-  doc.rect(0, 22, W, 16, 'F');
-  doc.setFont('helvetica','bold');
-  doc.setFontSize(8);
-  doc.setTextColor(255,255,255);
-  doc.text(`Total: ${list.length}   ✓ Aprovados: ${ok}   ✕ Reprovados: ${fail}   Taxa: ${rate}%`, W/2, 32, {align:'center'});
-
-  // Table
-  doc.autoTable({
-    startY: 42,
-    margin: {left:M, right:M},
-    styles: { font:'helvetica', fontSize:7.5, cellPadding:3 },
-    headStyles: { fillColor:blue, textColor:255, fontStyle:'bold', fontSize:7 },
-    alternateRowStyles: { fillColor:light },
-    columns: [
-      {header:'Data',        dataKey:'date'},
-      {header:'PN',          dataKey:'pn'},
-      {header:'Tipo',        dataKey:'type'},
-      {header:'Especificação',dataKey:'spec'},
-      {header:'Solicitante', dataKey:'req'},
-      {header:'Executante',  dataKey:'exec'},
-      {header:'Início',      dataKey:'start'},
-      {header:'Fim',         dataKey:'end'},
-      {header:'Resultado',   dataKey:'res'},
-      {header:'Status',      dataKey:'status'},
-    ],
-    body: list.map(t => {
-      const p = products.find(p => p.id===t.productId);
-      return {
-        date: t.date, pn: p?.pn||'—', type: p?.testType||'—',
-        spec: `${p?.spec||'—'} ${p?.unit||''}`,
-        req: t.requester||'—', exec: t.executor,
-        start: t.startTime, end: t.endTime,
-        res: `${t.result} ${p?.unit||''}`, status: t.status
-      };
-    }),
-    didParseCell(data) {
-      if (data.column.dataKey === 'status') {
-        data.cell.styles.textColor = data.cell.raw === 'Aprovado' ? [16,185,129] : [239,68,68];
-        data.cell.styles.fontStyle = 'bold';
-      }
-    },
-    foot: [[`Total: ${list.length}`,'','','','','','','',`Aprovados: ${ok}`,`Taxa: ${rate}%`]],
-    footStyles: {fillColor:dark, textColor:255, fontStyle:'bold', fontSize:7},
-  });
-
-  // Page footer
-  const pageCount = doc.getNumberOfPages();
-  for (let i=1; i<=pageCount; i++) {
-    doc.setPage(i);
-    doc.setFontSize(7);
-    doc.setTextColor(...gray);
-    doc.text(`Página ${i} de ${pageCount} — Röchling Automotive`, W/2, 205, {align:'center'});
-  }
+    if (typeChart) typeChart.destroy();
+    typeChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: [...map.keys()],
+            datasets: [{
+                data: [...map.values()],
+                backgroundColor: ['#4d9eff','#22d3a0','#ff5a6e','#ffb740','#a78bfa','#60e4fa'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive:true, maintainAspectRatio:false,
+            plugins: {
+                legend: { position:'bottom', labels:{ color: chartColors().legend, font:{size:10}, padding:10 } }
+            }
+        }
+    });
 }
 
-// ═══════════════════════════════════════════════
-//  IMPORT / EXPORT
-// ═══════════════════════════════════════════════
+// Rejected list
+function renderRejectedList(f) {
+    const map = new Map();
+    f.forEach(t => {
+        const p = products.find(p => p.id === t.productId);
+        if (!p) return;
+        if (!map.has(p.pn)) map.set(p.pn, { r:0, total:0 });
+        const d = map.get(p.pn);
+        if (t.status === 'Reprovado') d.r++;
+        d.total++;
+    });
+
+    const list = [...map.entries()].filter(([,d]) => d.r > 0).sort((a,b) => b[1].r - a[1].r).slice(0,5);
+    const el   = document.getElementById('rejectedList');
+
+    if (!list.length) {
+        el.innerHTML = '<div class="empty-state"><div class="empty-icon">🎉</div><p>Sem reprovações no período</p></div>';
+        return;
+    }
+
+    el.innerHTML = list.map(([pn, d]) => {
+        const pct = Math.round(d.r / d.total * 100);
+        return `
+            <div class="list-item">
+                <div style="flex:1;">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                        <span class="mono">${pn}</span>
+                        <span style="font-size:0.78rem;color:var(--muted-fg);">
+                            ${d.r}/${d.total} <span class="badge badge-danger">${pct}%</span>
+                        </span>
+                    </div>
+                    <div class="prog"><div class="prog-fill" style="width:${pct}%"></div></div>
+                </div>
+            </div>`;
+    }).join('');
+}
+
+// Recent list
+function renderRecentList(f) {
+    const recent = [...f].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0,5);
+    const el     = document.getElementById('recentList');
+
+    if (!recent.length) {
+        el.innerHTML = '<div class="empty-state"><p>Sem ensaios no período</p></div>';
+        return;
+    }
+
+    el.innerHTML = recent.map(t => {
+        const p = products.find(p => p.id === t.productId);
+        return `
+            <div class="list-item">
+                <div style="flex:1;min-width:0;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">
+                        <span class="mono">${p?.pn || '—'}</span>
+                        <span class="badge ${t.status==='Aprovado'?'badge-success':'badge-danger'}">${t.status}</span>
+                    </div>
+                    <div style="font-size:0.72rem;color:var(--muted-fg);">${p?.testType||'—'} · ${t.executor} · ${t.date}</div>
+                </div>
+                <div style="text-align:right;flex-shrink:0;margin-left:12px;">
+                    <div class="mono">${t.result} ${p?.unit||''}</div>
+                    <div style="font-size:0.68rem;color:var(--muted-fg);">${t.startTime}–${t.endTime}</div>
+                </div>
+            </div>`;
+    }).join('');
+}
+
+// ────────────────────────────────────────────────
+// PRODUCTS TABLE
+// ────────────────────────────────────────────────
+function renderProducts() {
+    const q  = document.getElementById('productSearch').value.toLowerCase();
+    const f  = products.filter(p => p.pn.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
+    const tb = document.getElementById('productsTableBody');
+
+    tb.innerHTML = f.length ? f.map(p => `
+        <tr>
+            <td class="mono">${p.pn}</td>
+            <td>${p.description}</td>
+            <td><span class="badge badge-warning">${p.testType}</span></td>
+            <td class="mono">${p.unit||'—'}</td>
+            <td class="mono">${p.spec} ${p.unit||''}</td>
+            <td>
+                <div class="table-actions">
+                    <button class="action-btn" onclick="editProduct('${p.id}')">✏️</button>
+                    <button class="action-btn del" onclick="deleteProduct('${p.id}')">🗑️</button>
+                </div>
+            </td>
+        </tr>`).join('')
+    : '<tr><td colspan="6"><div class="empty-state"><p>Nenhum produto encontrado</p></div></td></tr>';
+}
+
+// ────────────────────────────────────────────────
+// TESTS TABLE
+// ────────────────────────────────────────────────
+function renderTests() {
+    const q  = document.getElementById('testSearch').value.toLowerCase();
+    const f  = tests.filter(t => {
+        const p = products.find(p => p.id === t.productId);
+        return p && (p.pn.toLowerCase().includes(q) || (t.requester||'').toLowerCase().includes(q) || t.executor.toLowerCase().includes(q));
+    }).sort((a,b) => new Date(b.date) - new Date(a.date));
+
+    const tb = document.getElementById('testsTableBody');
+    tb.innerHTML = f.length ? f.map(t => {
+        const p = products.find(p => p.id === t.productId);
+        return `
+            <tr>
+                <td>${t.date}</td>
+                <td class="mono">${p?.pn||'—'}</td>
+                <td>${p?.testType||'—'}</td>
+                <td class="mono">${p?.spec||'—'} ${p?.unit||''}</td>
+                <td>${t.requester||'—'}</td>
+                <td>${t.executor}</td>
+                <td>${t.startTime}</td>
+                <td>${t.endTime}</td>
+                <td class="mono">${t.result} ${p?.unit||''}</td>
+                <td><span class="badge ${t.status==='Aprovado'?'badge-success':'badge-danger'}">${t.status}</span></td>
+                <td>
+                    <div class="table-actions">
+                        <button class="action-btn" onclick="editTest('${t.id}')">✏️</button>
+                        <button class="action-btn del" onclick="deleteTest('${t.id}')">🗑️</button>
+                    </div>
+                </td>
+            </tr>`;
+    }).join('')
+    : '<tr><td colspan="11"><div class="empty-state"><p>Nenhum ensaio encontrado</p></div></td></tr>';
+}
+
+// ────────────────────────────────────────────────
+// PRODUCT CRUD
+// ────────────────────────────────────────────────
+function openProductModal(id = null) {
+    document.getElementById('productForm').reset();
+    document.getElementById('productId').value = '';
+    document.getElementById('productModalTitle').textContent = 'Novo Produto';
+
+    if (id) {
+        const p = products.find(p => p.id === id);
+        if (p) {
+            document.getElementById('productModalTitle').textContent = 'Editar Produto';
+            document.getElementById('productId').value          = p.id;
+            document.getElementById('productPn').value          = p.pn;
+            document.getElementById('productDescription').value = p.description;
+            document.getElementById('productTestType').value    = p.testType;
+            document.getElementById('productUnit').value        = p.unit||'';
+            document.getElementById('productSpec').value        = p.spec;
+        }
+    }
+
+    document.getElementById('productModal').classList.add('open');
+}
+
+function editProduct(id)   { openProductModal(id); }
+function closeModal(id)    { document.getElementById(id).classList.remove('open'); }
+
+function saveProduct(e) {
+    e.preventDefault();
+    const id   = document.getElementById('productId').value;
+    const data = {
+        id:          id || 'prod-' + Date.now(),
+        pn:          document.getElementById('productPn').value,
+        description: document.getElementById('productDescription').value,
+        testType:    document.getElementById('productTestType').value,
+        unit:        document.getElementById('productUnit').value,
+        spec:        document.getElementById('productSpec').value,
+    };
+
+    if (id) {
+        const i = products.findIndex(p => p.id === id);
+        if (i !== -1) {
+            products[i] = { ...products[i], ...data };
+            recalcStatus(id);
+        }
+    } else {
+        products.push(data);
+    }
+
+    saveData(); closeModal('productModal');
+    renderProducts(); updateFilterOptions(); updateDashboard();
+    toast(id ? 'Produto atualizado!' : 'Produto criado!');
+}
+
+function recalcStatus(productId) {
+    const p = products.find(p => p.id === productId);
+    if (!p) return;
+    tests = tests.map(t => {
+        if (t.productId !== productId) return t;
+        return { ...t, status: checkApproval(p, t.result) ? 'Aprovado' : 'Reprovado' };
+    });
+    saveData();
+}
+
+function deleteProduct(id) {
+    if (!confirm('Excluir produto e todos os ensaios associados?')) return;
+    products = products.filter(p => p.id !== id);
+    tests    = tests.filter(t => t.productId !== id);
+    saveData(); renderProducts(); updateFilterOptions(); updateDashboard();
+    toast('Produto excluído!');
+}
+
+// ────────────────────────────────────────────────
+// TEST CRUD
+// ────────────────────────────────────────────────
+function openTestModal(id = null) {
+    document.getElementById('testForm').reset();
+    document.getElementById('testId').value = '';
+    document.getElementById('testSpecInfo').textContent = '';
+    document.getElementById('testModalTitle').textContent = 'Novo Ensaio';
+
+    // rebuild product select
+    const sel = document.getElementById('testProduct');
+    while (sel.options.length > 1) sel.remove(1);
+    products.forEach(p => sel.add(new Option(p.pn + ' — ' + p.description + ' (' + p.unit + ')', p.id)));
+
+    if (id) {
+        const t = tests.find(t => t.id === id);
+        if (t) {
+            document.getElementById('testModalTitle').textContent = 'Editar Ensaio';
+            document.getElementById('testId').value        = t.id;
+            document.getElementById('testProduct').value   = t.productId;
+            document.getElementById('testDate').value      = t.date;
+            document.getElementById('testRequester').value = t.requester||'';
+            document.getElementById('testExecutor').value  = t.executor;
+            document.getElementById('testResult').value    = t.result;
+            document.getElementById('testStartTime').value = t.startTime;
+            document.getElementById('testEndTime').value   = t.endTime;
+            document.getElementById('testNotes').value     = t.notes||'';
+            updateTestSpecInfo();
+        }
+    } else {
+        document.getElementById('testDate').value = today();
+    }
+
+    document.getElementById('testModal').classList.add('open');
+}
+
+function editTest(id) { openTestModal(id); }
+
+function updateTestSpecInfo() {
+    const pid = document.getElementById('testProduct').value;
+    const p   = products.find(p => p.id === pid);
+    document.getElementById('testSpecInfo').textContent = p ? `Especificação: ${p.spec} ${p.unit}` : '';
+}
+
+function saveTest(e) {
+    e.preventDefault();
+    const id        = document.getElementById('testId').value;
+    const productId = document.getElementById('testProduct').value;
+    const result    = parseFloat(document.getElementById('testResult').value);
+    const p         = products.find(p => p.id === productId);
+
+    if (!p) { toast('Produto não encontrado!', 'error'); return; }
+
+    const data = {
+        id:        id || 'test-' + Date.now(),
+        productId,
+        date:      document.getElementById('testDate').value,
+        requester: document.getElementById('testRequester').value,
+        executor:  document.getElementById('testExecutor').value,
+        result:    result.toFixed(2),
+        status:    checkApproval(p, result) ? 'Aprovado' : 'Reprovado',
+        startTime: document.getElementById('testStartTime').value,
+        endTime:   document.getElementById('testEndTime').value,
+        notes:     document.getElementById('testNotes').value,
+        createdAt: id ? (tests.find(t => t.id === id)?.createdAt || new Date().toISOString()) : new Date().toISOString()
+    };
+
+    if (id) {
+        const i = tests.findIndex(t => t.id === id);
+        if (i !== -1) tests[i] = { ...tests[i], ...data };
+    } else {
+        tests.push(data);
+    }
+
+    saveData(); closeModal('testModal');
+    renderTests(); updateDashboard(); updateFilterOptions();
+    toast(id ? 'Ensaio atualizado!' : 'Ensaio registrado!');
+}
+
+function deleteTest(id) {
+    if (!confirm('Excluir este ensaio?')) return;
+    tests = tests.filter(t => t.id !== id);
+    saveData(); renderTests(); updateDashboard();
+    toast('Ensaio excluído!');
+}
+
+// ────────────────────────────────────────────────
+// PRINT MODAL
+// ────────────────────────────────────────────────
+function openPrintModal() {
+    // update period info label
+    const pv = document.getElementById('periodFilter').value;
+    const lbl = { '7':'Últimos 7 dias', '14':'Últimos 14 dias', '30':'Últimos 30 dias', '90':'Últimos 90 dias', all:'Todo período' };
+    document.getElementById('printPeriodInfo').textContent = lbl[pv] || pv;
+    document.getElementById('printModal').classList.add('open');
+}
+
+function closePrintModal() { document.getElementById('printModal').classList.remove('open'); }
+
+function togglePrintCheck(input, labelId) {
+    document.getElementById(labelId).classList.toggle('selected', input.checked);
+}
+
+function getPrintChecks() {
+    const vals = new Set();
+    document.querySelectorAll('#printModal input[type=checkbox]:checked').forEach(cb => vals.add(cb.value));
+    return vals;
+}
+
+// ── EXECUTE PRINT ──
+function executePrint() {
+    const checked = getPrintChecks();
+    const f       = getFilteredTests();
+    const obs     = document.getElementById('printObs').value.trim();
+    const pv      = document.getElementById('periodFilter').value;
+    const periodLabels = { '7':'Últimos 7 dias', '14':'Últimos 14 dias', '30':'Últimos 30 dias', '90':'Últimos 90 dias', all:'Todo período' };
+    const periodLabel  = periodLabels[pv] || pv;
+
+    const now  = new Date();
+    const dateStr = now.toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
+    const timeStr = now.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+
+    // ── helpers ──
+    const total    = f.length;
+    const approved = f.filter(t => t.status === 'Aprovado').length;
+    const rejected = total - approved;
+    const rate     = total ? (approved / total * 100).toFixed(1) : '0.0';
+
+    // by product
+    const byProduct = new Map();
+    f.forEach(t => {
+        const p = products.find(p => p.id === t.productId);
+        if (!p) return;
+        if (!byProduct.has(p.pn)) byProduct.set(p.pn, { desc: p.description, a:0, r:0 });
+        const d = byProduct.get(p.pn);
+        t.status === 'Aprovado' ? d.a++ : d.r++;
+    });
+
+    // by type
+    const byType = new Map();
+    f.forEach(t => {
+        const p = products.find(p => p.id === t.productId);
+        if (!p) return;
+        byType.set(p.testType, (byType.get(p.testType)||0) + 1);
+    });
+
+    // by executor
+    const byExec = new Map();
+    f.forEach(t => {
+        if (!byExec.has(t.executor)) byExec.set(t.executor, { a:0, r:0 });
+        const d = byExec.get(t.executor);
+        t.status === 'Aprovado' ? d.a++ : d.r++;
+    });
+
+    const css = `
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; color:#1a2540; background:#fff; font-size:11px; line-height:1.5; }
+        .page { max-width:860px; margin:0 auto; padding:28px 32px; }
+        h1 { font-size:22px; font-weight:700; color:#0f2040; letter-spacing:-0.02em; }
+        h2 { font-size:13px; font-weight:700; color:#0f2040; margin-bottom:10px; padding-bottom:6px; border-bottom:2px solid #e2e8f0; }
+        h3 { font-size:11px; font-weight:600; color:#4a5f80; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.06em; }
+        .meta { font-size:10px; color:#8096b8; margin-top:2px; }
+        .header { display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:18px; margin-bottom:18px; border-bottom:3px solid #0f2040; }
+        .logo { font-size:24px; font-weight:800; color:#0f2040; }
+        .logo span { color:#2563eb; }
+        .section { margin-bottom:22px; }
+        .kpi-row { display:grid; grid-template-columns:repeat(6,1fr); gap:10px; margin-bottom:20px; }
+        .kpi { border:1px solid #e2e8f0; border-radius:8px; padding:12px 10px; text-align:center; }
+        .kpi-val { font-size:20px; font-weight:700; color:#0f2040; }
+        .kpi-lbl { font-size:9px; text-transform:uppercase; letter-spacing:0.08em; color:#8096b8; margin-top:2px; }
+        .kpi.success .kpi-val { color:#0ea573; }
+        .kpi.danger  .kpi-val { color:#e53e55; }
+        .kpi.accent  .kpi-val { color:#7c3aed; }
+        .kpi.warn    .kpi-val { color:#d97706; }
+        table { width:100%; border-collapse:collapse; font-size:10px; margin-top:8px; }
+        th { background:#f4f6fb; color:#4a5f80; text-transform:uppercase; letter-spacing:0.06em; font-size:9px; padding:7px 8px; text-align:left; border-bottom:2px solid #dde4f0; }
+        td { padding:6px 8px; border-bottom:1px solid #f0f4fb; color:#2a3a5a; }
+        tr:nth-child(even) td { background:#f9fbff; }
+        .badge { display:inline-block; padding:1px 7px; border-radius:4px; font-weight:600; font-size:9px; }
+        .badge-ok  { background:#d1fae5; color:#059669; }
+        .badge-err { background:#fee2e2; color:#dc2626; }
+        .badge-type { background:#dbeafe; color:#2563eb; }
+        .two-col { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+        .summary-box { border:1px solid #e2e8f0; border-radius:8px; padding:14px; }
+        .approval-big { font-size:40px; font-weight:800; color:#0ea573; }
+        .approval-sub { font-size:10px; color:#8096b8; }
+        .obs-box { background:#f4f6fb; border-left:3px solid #2563eb; padding:10px 14px; border-radius:4px; font-size:10px; color:#4a5f80; margin-top:6px; }
+        .footer { margin-top:28px; padding-top:14px; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; font-size:9px; color:#aabbd0; }
+        @media print { .page { padding:16px; } }
+    `;
+
+    let html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Relatório QA — Rochling</title><style>${css}</style></head><body><div class="page">`;
+
+    // HEADER
+    html += `
+        <div class="header">
+            <div>
+                <div class="logo">Rochling <span>Automotive</span></div>
+                <div class="meta">Relatório de Qualidade — Gestão de Ensaios</div>
+                <div class="meta">Período: ${periodLabel} &nbsp;|&nbsp; Gerado em ${dateStr} às ${timeStr}</div>
+                ${obs ? `<div class="obs-box" style="margin-top:8px;">📝 ${obs}</div>` : ''}
+            </div>
+            <div style="text-align:right;">
+                <div style="font-size:11px;color:#8096b8;">Rochling Automotive</div>
+                <div style="font-size:10px;color:#aabbd0;">Sistema QA · Ensaios</div>
+            </div>
+        </div>`;
+
+    // KPIs
+    if (checked.has('kpi')) {
+        html += `<div class="section">
+            <h2>Indicadores de Performance (KPI)</h2>
+            <div class="kpi-row">
+                <div class="kpi"><div class="kpi-val">${total}</div><div class="kpi-lbl">Total Ensaios</div></div>
+                <div class="kpi success"><div class="kpi-val">${approved}</div><div class="kpi-lbl">Aprovados</div></div>
+                <div class="kpi danger"><div class="kpi-val">${rejected}</div><div class="kpi-lbl">Reprovados</div></div>
+                <div class="kpi accent"><div class="kpi-val">${rate}%</div><div class="kpi-lbl">Taxa Aprovação</div></div>
+                <div class="kpi"><div class="kpi-val">${new Set(f.map(t=>t.executor)).size}</div><div class="kpi-lbl">Executantes</div></div>
+                <div class="kpi"><div class="kpi-val">${products.length}</div><div class="kpi-lbl">Produtos</div></div>
+            </div>
+        </div>`;
+    }
+
+    // APPROVAL
+    if (checked.has('approval')) {
+        html += `<div class="section"><h2>Taxa de Aprovação Global</h2>
+            <div class="summary-box" style="display:flex;align-items:center;gap:28px;">
+                <div>
+                    <div class="approval-big">${rate}%</div>
+                    <div class="approval-sub">de aprovação no período</div>
+                </div>
+                <div style="flex:1;">
+                    <div style="height:16px;background:#f0f4fb;border-radius:99px;overflow:hidden;">
+                        <div style="height:100%;width:${rate}%;background:#0ea573;border-radius:99px;"></div>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:9px;color:#8096b8;">
+                        <span>✓ ${approved} Aprovados</span><span>✕ ${rejected} Reprovados</span>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    // REJECTED
+    if (checked.has('rejected')) {
+        const rejList = [...byProduct.entries()].filter(([,d]) => d.r > 0).sort((a,b) => b[1].r - a[1].r);
+        html += `<div class="section"><h2>⚠️ Produtos com Mais Reprovações</h2>
+            <table><thead><tr><th>PN</th><th>Descrição</th><th>Aprovados</th><th>Reprovados</th><th>Total</th><th>Taxa Falha</th></tr></thead><tbody>
+            ${rejList.map(([pn,d]) => `<tr>
+                <td><b>${pn}</b></td>
+                <td>${d.desc}</td>
+                <td style="color:#0ea573;">${d.a}</td>
+                <td style="color:#dc2626;">${d.r}</td>
+                <td>${d.a+d.r}</td>
+                <td><span class="badge badge-err">${Math.round(d.r/(d.a+d.r)*100)}%</span></td>
+            </tr>`).join('')}
+            </tbody></table>
+        </div>`;
+    }
+
+    // BY PRODUCT
+    if (checked.has('byProduct')) {
+        const sorted = [...byProduct.entries()].sort((a,b) => (b[1].a+b[1].r) - (a[1].a+a[1].r));
+        html += `<div class="section"><h2>Resumo por Produto (PN)</h2>
+            <table><thead><tr><th>PN</th><th>Descrição</th><th>Aprovados</th><th>Reprovados</th><th>Total</th><th>% Aprovação</th></tr></thead><tbody>
+            ${sorted.map(([pn,d]) => `<tr>
+                <td><b>${pn}</b></td>
+                <td>${d.desc}</td>
+                <td>${d.a}</td>
+                <td>${d.r}</td>
+                <td>${d.a+d.r}</td>
+                <td><span class="badge ${d.r===0?'badge-ok':'badge-err'}">${Math.round(d.a/(d.a+d.r)*100)}%</span></td>
+            </tr>`).join('')}
+            </tbody></table>
+        </div>`;
+    }
+
+    // BY TYPE
+    if (checked.has('byType')) {
+        html += `<div class="section"><h2>Resumo por Tipo de Ensaio</h2>
+            <table><thead><tr><th>Tipo de Ensaio</th><th>Quantidade</th><th>% do Total</th></tr></thead><tbody>
+            ${[...byType.entries()].sort((a,b)=>b[1]-a[1]).map(([type,count]) => `<tr>
+                <td><span class="badge badge-type">${type}</span></td>
+                <td>${count}</td>
+                <td>${total ? Math.round(count/total*100) : 0}%</td>
+            </tr>`).join('')}
+            </tbody></table>
+        </div>`;
+    }
+
+    // BY EXECUTOR
+    if (checked.has('byExecutor')) {
+        html += `<div class="section"><h2>Resumo por Executante</h2>
+            <table><thead><tr><th>Executante</th><th>Aprovados</th><th>Reprovados</th><th>Total</th><th>Taxa Aprovação</th></tr></thead><tbody>
+            ${[...byExec.entries()].sort((a,b)=>(b[1].a+b[1].r)-(a[1].a+a[1].r)).map(([exec,d]) => `<tr>
+                <td>${exec}</td>
+                <td>${d.a}</td>
+                <td>${d.r}</td>
+                <td>${d.a+d.r}</td>
+                <td><span class="badge ${d.r===0?'badge-ok':'badge-err'}">${Math.round(d.a/(d.a+d.r)*100)}%</span></td>
+            </tr>`).join('')}
+            </tbody></table>
+        </div>`;
+    }
+
+    // ALL TESTS
+    if (checked.has('allTests')) {
+        const sorted = [...f].sort((a,b) => new Date(b.date) - new Date(a.date));
+        html += `<div class="section" style="page-break-before:always;"><h2>Tabela Completa de Ensaios (${sorted.length} registros)</h2>
+            <table><thead><tr><th>Data</th><th>PN</th><th>Tipo</th><th>Especificação</th><th>Solicitante</th><th>Executante</th><th>Início</th><th>Fim</th><th>Resultado</th><th>Status</th></tr></thead><tbody>
+            ${sorted.map(t => {
+                const p = products.find(p => p.id === t.productId);
+                return `<tr>
+                    <td>${t.date}</td>
+                    <td><b>${p?.pn||'—'}</b></td>
+                    <td>${p?.testType||'—'}</td>
+                    <td>${p?.spec||'—'} ${p?.unit||''}</td>
+                    <td>${t.requester||'—'}</td>
+                    <td>${t.executor}</td>
+                    <td>${t.startTime}</td>
+                    <td>${t.endTime}</td>
+                    <td><b>${t.result} ${p?.unit||''}</b></td>
+                    <td><span class="badge ${t.status==='Aprovado'?'badge-ok':'badge-err'}">${t.status}</span></td>
+                </tr>`;
+            }).join('')}
+            </tbody></table>
+        </div>`;
+    }
+
+    // PRODUCTS CATALOG
+    if (checked.has('products')) {
+        html += `<div class="section" style="page-break-before:always;"><h2>Catálogo de Produtos</h2>
+            <table><thead><tr><th>PN</th><th>Descrição</th><th>Tipo de Ensaio</th><th>Unidade</th><th>Especificação</th></tr></thead><tbody>
+            ${products.map(p => `<tr>
+                <td><b>${p.pn}</b></td>
+                <td>${p.description}</td>
+                <td><span class="badge badge-type">${p.testType}</span></td>
+                <td>${p.unit||'—'}</td>
+                <td><b>${p.spec} ${p.unit||''}</b></td>
+            </tr>`).join('')}
+            </tbody></table>
+        </div>`;
+    }
+
+    // FOOTER
+    html += `<div class="footer">
+        <span>Rochling Automotive — Sistema de Gestão de Ensaios QA</span>
+        <span>Emitido em ${dateStr} | ${timeStr}</span>
+    </div>`;
+
+    html += `</div></body></html>`;
+
+    const w = window.open('', '_blank', 'width=1000,height=800');
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+    setTimeout(() => { w.print(); }, 600);
+
+    closePrintModal();
+    toast('Relatório gerado com sucesso!');
+}
+
+// ────────────────────────────────────────────────
+// EXPORT CSV
+// ────────────────────────────────────────────────
 function exportCSV() {
-  const ft = filteredTests();
-  const rows = ft.map(t => {
-    const p = products.find(p => p.id===t.productId);
-    return [t.date,p?.pn||'',p?.testType||'',`${p?.spec||''} ${p?.unit||''}`,t.requester||'',t.executor,t.startTime,t.endTime,`${t.result} ${p?.unit||''}`,t.status].join(',');
-  });
-  const csv = 'Data,PN,Tipo,Spec,Solicitante,Executante,Início,Fim,Resultado,Status\n' + rows.join('\n');
-  download('ensaios.csv', csv, 'text/csv');
-  toast('CSV exportado ✓','ok');
+    const f = getFilteredTests();
+    let csv = 'Data,PN,Tipo,Especificação,Solicitante,Executante,Início,Fim,Resultado,Unidade,Status\n';
+    f.forEach(t => {
+        const p = products.find(p => p.id === t.productId);
+        csv += `${t.date},${p?.pn||''},${p?.testType||''},${p?.spec||''},${t.requester||''},${t.executor},${t.startTime},${t.endTime},${t.result},${p?.unit||''},${t.status}\n`;
+    });
+    const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
+    const a    = document.createElement('a');
+    a.href     = URL.createObjectURL(blob);
+    a.download = 'ensaios_' + today() + '.csv';
+    a.click();
+    toast('CSV exportado!');
 }
 
-function exportAllJSON() {
-  download('rqa_backup.json', JSON.stringify({products,tests},null,2), 'application/json');
-  toast('Backup exportado ✓','ok');
+// ────────────────────────────────────────────────
+// TOAST
+// ────────────────────────────────────────────────
+function toast(msg, type='success') {
+    const area = document.getElementById('toastArea');
+    const el   = document.createElement('div');
+    el.className = 'toast toast-' + type;
+    el.innerHTML = `<span>${type==='success'?'✓':'✕'}</span><span>${msg}</span>`;
+    area.appendChild(el);
+    setTimeout(() => { el.style.opacity='0'; el.style.transform='translateX(60px)'; el.style.transition='all 0.2s'; setTimeout(()=>el.remove(),220); }, 3000);
 }
 
-function importJSON(input) {
-  const file = input.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const data = JSON.parse(e.target.result);
-      if (data.products) products = data.products;
-      if (data.tests)    tests    = data.tests;
-      persist(); buildFilters(); refreshDash(); renderProds(); renderTestsTable(); renderReports();
-      toast('Dados importados com sucesso ✓','ok');
-    } catch { toast('Arquivo inválido','err') }
-  };
-  reader.readAsText(file);
-}
-
-function download(name, content, type) {
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([content],{type}));
-  a.download = name; a.click();
-}
-
-function clearAll() {
-  if (!confirm('Apagar TODOS os dados? Esta ação não pode ser desfeita.')) return;
-  products = []; tests = [];
-  localStorage.removeItem('rqa_products'); localStorage.removeItem('rqa_tests');
-  buildFilters(); refreshDash(); renderProds(); renderTestsTable(); renderReports();
-  toast('Dados apagados','ok');
-}
-
-// ═══════════════════════════════════════════════
-//  UTILS
-// ═══════════════════════════════════════════════
-function closeModal(id) { document.getElementById(id).classList.remove('open') }
-
-function toast(msg, type='ok') {
-  const d = document.createElement('div');
-  d.className = `toast ${type}`;
-  d.innerHTML = `<span>${type==='ok'?'✓':'✕'}</span><span>${msg}</span>`;
-  document.getElementById('toasts').appendChild(d);
-  setTimeout(() => { d.style.opacity='0'; d.style.transform='translateX(30px)'; setTimeout(()=>d.remove(),300) }, 3200);
-}
+// Close modals on outside click
+document.querySelectorAll('.modal-bg, .print-modal-bg').forEach(m => {
+    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
 </script>
 </body>
 </html>
