@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rochling Automotive — QA Ensaios</title>
+    <title>Rochling Automotive — QA Ensaios (Gráficos Interativos)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 
@@ -14,9 +14,6 @@
             from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
-        // ═══════════════════════════════════════════════════════════
-        // 🔧 CONFIGURAÇÃO DO FIREBASE - SUAS CREDENCIAIS 🔧
-        // ═══════════════════════════════════════════════════════════
         const firebaseConfig = {
             apiKey: "AIzaSyB_OvLi3SSBML2QpeXhl7oRp3NYnv7GaGo",
             authDomain: "ensaios-268ab.firebaseapp.com",
@@ -30,19 +27,12 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        // Enable offline persistence
-        enableIndexedDbPersistence(db).catch(err => {
-            console.warn("Offline persistence error:", err);
-        });
+        enableIndexedDbPersistence(db).catch(err => console.warn("Offline persistence error:", err));
 
-        // Sign in anonymously automatically
-        let isAuthenticated = false;
-        
         async function initAnonymousAuth() {
             try {
                 const userCred = await signInAnonymously(auth);
                 console.log("Anonymous user signed in:", userCred.user.uid);
-                isAuthenticated = true;
                 return userCred.user;
             } catch (error) {
                 console.error("Anonymous auth error:", error);
@@ -50,13 +40,11 @@
             }
         }
 
-        // Expose globals
         window._fb = { 
             db, auth, 
             collection, doc, setDoc, getDocs, deleteDoc, onSnapshot, 
             serverTimestamp, query, orderBy,
-            initAnonymousAuth, onAuthStateChanged,
-            isAuthenticated: () => isAuthenticated
+            initAnonymousAuth, onAuthStateChanged
         };
     </script>
 
@@ -95,7 +83,6 @@
 
         body { font-family: var(--font-body); background: var(--bg); color: var(--fg); min-height: 100vh; line-height: 1.5; transition: background 0.3s, color 0.3s; }
 
-        /* Loading Overlay */
         .loading-overlay {
             position: fixed; inset: 0;
             background: var(--bg);
@@ -116,10 +103,8 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Layout */
         .layout { display: flex; min-height: 100vh; }
 
-        /* Sidebar */
         .sidebar {
             width: 220px; background: var(--surface);
             border-right: 1px solid var(--border);
@@ -143,50 +128,24 @@
             color: var(--muted-fg); border: none; background: transparent;
             width: 100%; text-align: left; transition: all 0.15s; margin-bottom: 2px;
         }
-
         .nav-item:hover { color: var(--fg); background: var(--surface2); }
         .nav-item.active { color: var(--primary); background: var(--primary-dim); }
         .nav-icon { font-size: 1rem; width: 20px; text-align: center; }
 
         .sidebar-footer { padding: 16px 12px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
-
-        .status-badge {
-            display: flex; align-items: center; gap: 8px;
-            padding: 10px 12px;
-            background: var(--surface2);
-            border-radius: var(--radius);
-            border: 1px solid var(--border);
-            font-size: 0.75rem;
-        }
+        .status-badge { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--surface2); border-radius: var(--radius); border: 1px solid var(--border); font-size: 0.75rem; }
         .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
-        .theme-btn {
-            display: flex; align-items: center; gap: 8px;
-            padding: 8px 12px; border-radius: var(--radius);
-            border: 1px solid var(--border); background: var(--surface2);
-            color: var(--muted-fg); cursor: pointer;
-            font-size: 0.8rem; font-family: var(--font-body); width: 100%; transition: all 0.15s;
-        }
+        .theme-btn { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface2); color: var(--muted-fg); cursor: pointer; font-size: 0.8rem; font-family: var(--font-body); width: 100%; transition: all 0.15s; }
         .theme-btn:hover { color: var(--fg); border-color: var(--border2); }
 
-        /* Main */
         .main { margin-left: 220px; flex: 1; min-height: 100vh; }
-
-        .topbar {
-            padding: 16px 28px;
-            border-bottom: 1px solid var(--border);
-            display: flex; align-items: center; justify-content: space-between;
-            background: var(--surface);
-            position: sticky; top: 0; z-index: 50;
-        }
-
+        .topbar { padding: 16px 28px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--surface); position: sticky; top: 0; z-index: 50; }
         .topbar-title { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; }
         .topbar-actions { display: flex; gap: 10px; align-items: center; }
-
         .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 2px var(--success-dim); animation: pulse-dot 2s ease-in-out infinite; }
         @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
         .sync-label { font-size: 0.72rem; color: var(--success); font-family: var(--font-mono); }
 
-        /* Buttons */
         .btn {
             display: inline-flex; align-items: center; gap: 6px;
             padding: 8px 16px; border-radius: var(--radius);
@@ -201,35 +160,26 @@
         .btn-ghost { background: transparent; border-color: transparent; }
         .btn-print { background: linear-gradient(135deg, var(--accent), var(--primary)); border: none; color: #fff; font-weight: 600; }
         
-        /* Content */
         .content { padding: 28px; }
         .section { display: none; }
         .section.active { display: block; }
 
-        /* Filters */
         .filters-bar {
             display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;
             background: var(--surface); border: 1px solid var(--border);
             border-radius: var(--radius-lg); padding: 16px 20px; margin-bottom: 24px;
         }
         .filter-group { display: flex; flex-direction: column; gap: 4px; min-width: 160px; }
-        .filter-group label {
-            font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em;
-            color: var(--muted-fg); font-family: var(--font-mono);
-        }
-        select, input {
-            padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border2);
-            background: var(--surface2); color: var(--fg); font-size: 0.82rem;
-            font-family: var(--font-body); outline: none; width: 100%;
-        }
+        .filter-group label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted-fg); font-family: var(--font-mono); }
+        select, input { padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border2); background: var(--surface2); color: var(--fg); font-size: 0.82rem; font-family: var(--font-body); outline: none; width: 100%; }
         select:focus, input:focus { border-color: var(--primary); }
 
-        /* KPI Grid */
         .kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; margin-bottom: 24px; }
         .kpi-card {
             background: var(--surface); border: 1px solid var(--border);
             border-radius: var(--radius-lg); padding: 18px 16px;
             position: relative; overflow: hidden; transition: box-shadow 0.2s, transform 0.2s;
+            cursor: pointer;
         }
         .kpi-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
         .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
@@ -247,22 +197,22 @@
         .kpi-value.c-warning { color: var(--warning); }
         .kpi-icon { position: absolute; top: 16px; right: 16px; font-size: 1.4rem; opacity: 0.3; }
 
-        /* Charts */
         .charts-row { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 20px; }
         .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; }
         .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
         .card-title { font-family: var(--font-display); font-weight: 700; font-size: 0.95rem; }
         .card-subtitle { font-size: 0.75rem; color: var(--muted-fg); margin-top: 2px; }
-        .chart-wrap { position: relative; height: 260px; }
-        .gauge-wrap { position: relative; height: 180px; display: flex; align-items: center; justify-content: center; }
-        .gauge-center { position: absolute; text-align: center; top: 55%; }
+        .chart-wrap { position: relative; height: 260px; cursor: pointer; }
+        .chart-wrap canvas { cursor: pointer; }
+        .gauge-wrap { position: relative; height: 180px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .gauge-center { position: absolute; text-align: center; top: 55%; pointer-events: none; }
         .gauge-pct { font-family: var(--font-display); font-weight: 800; font-size: 2.2rem; color: var(--success); }
         .gauge-lbl { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted-fg); font-family: var(--font-mono); }
         .gauge-stats { display: flex; justify-content: space-around; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
-        
-        /* Lists */
+
         .list-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
-        .list-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
+        .list-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.15s; }
+        .list-item:hover { background: var(--surface2); padding-left: 8px; border-radius: 6px; }
         .badge {
             display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px;
             font-size: 0.7rem; font-weight: 600; font-family: var(--font-mono);
@@ -273,7 +223,6 @@
         .prog { height: 5px; background: var(--border2); border-radius: 99px; overflow: hidden; margin-top: 6px; }
         .prog-fill { height: 100%; background: var(--danger); border-radius: 99px; transition: width 0.4s; }
 
-        /* Tables */
         .table-wrap { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
         th {
@@ -283,10 +232,9 @@
             background: var(--surface); position: sticky; top: 0;
         }
         td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--fg2); }
-        tr:hover td { background: var(--surface2); }
+        tr:hover td { background: var(--surface2); cursor: pointer; }
         .mono { font-family: var(--font-mono); font-size: 0.78rem; color: var(--fg); }
 
-        /* Search */
         .search-row { display: flex; gap: 12px; margin-bottom: 16px; align-items: center; }
         .search-wrap { position: relative; flex: 1; }
         .search-wrap input { padding-left: 36px; }
@@ -312,33 +260,17 @@
         .form-group label { display: block; font-size: 0.72rem; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted-fg); margin-bottom: 5px; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
         .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border); }
-        .spec-hint { font-size: 0.7rem; color: var(--primary); margin-top: 3px; }
         .table-actions { display: flex; gap: 6px; }
         .action-btn { padding: 5px 9px; border-radius: 6px; border: 1px solid var(--border2); background: var(--surface2); cursor: pointer; font-size: 0.72rem; transition: all 0.15s; }
         .action-btn.del:hover { color: var(--danger); border-color: var(--danger); background: var(--danger-dim); }
         .empty-state { text-align: center; padding: 32px 20px; color: var(--muted-fg); }
 
-        /* Print Modal */
-        .print-modal-bg {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.75);
-            display: flex; align-items: center; justify-content: center;
-            z-index: 800; opacity: 0; visibility: hidden; transition: opacity 0.2s;
-        }
-        .print-modal-bg.open { opacity: 1; visibility: visible; }
-        .print-modal { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius-lg); width: 92%; max-width: 540px; max-height: 90vh; overflow-y: auto; }
-        .print-modal-bg.open .print-modal { transform: scale(1); }
-        .pm-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--border); }
-        .pm-body { padding: 20px 24px; }
-        .pm-section { margin-bottom: 20px; }
-        .pm-section-label { font-family: var(--font-mono); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted-fg); margin-bottom: 10px; }
-        .pm-checkgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .pm-check { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid var(--border2); border-radius: 8px; cursor: pointer; transition: all 0.15s; font-size: 0.8rem; color: var(--fg2); }
-        .pm-check:hover { border-color: var(--primary); color: var(--fg); }
-        .pm-check.selected { border-color: var(--primary); background: var(--primary-dim); color: var(--primary); }
-        .pm-check input { display: none; }
-        .pm-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
+        /* Detail Modal */
+        .detail-modal .modal { max-width: 500px; }
+        .detail-item { margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+        .detail-label { font-family: var(--font-mono); font-size: 0.65rem; text-transform: uppercase; color: var(--muted-fg); letter-spacing: 0.06em; margin-bottom: 4px; }
+        .detail-value { font-size: 1rem; font-weight: 500; color: var(--fg); }
 
-        /* Toast */
         .toast-area { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
         .toast {
             background: var(--surface2); border: 1px solid var(--border2);
@@ -378,7 +310,6 @@
 </div>
 
 <div class="layout">
-    <!-- SIDEBAR -->
     <aside class="sidebar">
         <div class="logo">
             <div class="logo-text">Rochling Automotive</div>
@@ -386,29 +317,17 @@
         </div>
         <nav class="nav">
             <div class="nav-label">Visão Geral</div>
-            <button class="nav-item active" onclick="showSection('dashboard', this)">
-                <span class="nav-icon">◈</span> Dashboard
-            </button>
+            <button class="nav-item active" onclick="showSection('dashboard', this)"><span class="nav-icon">◈</span> Dashboard</button>
             <div class="nav-label">Dados</div>
-            <button class="nav-item" onclick="showSection('products', this)">
-                <span class="nav-icon">▣</span> Produtos
-            </button>
-            <button class="nav-item" onclick="showSection('tests', this)">
-                <span class="nav-icon">◉</span> Ensaios
-            </button>
+            <button class="nav-item" onclick="showSection('products', this)"><span class="nav-icon">▣</span> Produtos</button>
+            <button class="nav-item" onclick="showSection('tests', this)"><span class="nav-icon">◉</span> Ensaios</button>
         </nav>
         <div class="sidebar-footer">
-            <div class="status-badge">
-                <div class="status-dot"></div>
-                <span>Online · Firebase</span>
-            </div>
-            <button class="theme-btn" onclick="toggleTheme()">
-                <span id="themeIcon">☀️</span> <span id="themeLabel">Tema Claro</span>
-            </button>
+            <div class="status-badge"><div class="status-dot"></div><span>Online · Firebase</span></div>
+            <button class="theme-btn" onclick="toggleTheme()"><span id="themeIcon">☀️</span> <span id="themeLabel">Tema Claro</span></button>
         </div>
     </aside>
 
-    <!-- MAIN -->
     <div class="main">
         <header class="topbar">
             <div class="topbar-title" id="topbarTitle">Dashboard</div>
@@ -424,78 +343,55 @@
             <!-- DASHBOARD -->
             <div id="dashboard" class="section active">
                 <div class="filters-bar no-print">
-                    <div class="filter-group">
-                        <label>Período</label>
-                        <select id="periodFilter" onchange="updateDashboard()">
-                            <option value="7">Últimos 7 dias</option>
-                            <option value="14">Últimos 14 dias</option>
-                            <option value="30" selected>Últimos 30 dias</option>
-                            <option value="90">Últimos 90 dias</option>
-                            <option value="all">Todo período</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label>Produto</label>
-                        <select id="productFilter" onchange="updateDashboard()"><option value="all">Todos</option></select>
-                    </div>
-                    <div class="filter-group">
-                        <label>Tipo de Ensaio</label>
-                        <select id="testTypeFilter" onchange="updateDashboard()"><option value="all">Todos</option></select>
-                    </div>
-                    <div class="filter-group">
-                        <label>Executante</label>
-                        <select id="executorFilter" onchange="updateDashboard()"><option value="all">Todos</option></select>
-                    </div>
-                    <div style="margin-left: auto;">
-                        <button class="btn btn-sm btn-ghost" onclick="resetFilters()">↺ Limpar</button>
-                    </div>
+                    <div class="filter-group"><label>Período</label><select id="periodFilter" onchange="updateDashboard()">
+                        <option value="7">Últimos 7 dias</option><option value="14">Últimos 14 dias</option>
+                        <option value="30" selected>Últimos 30 dias</option><option value="90">Últimos 90 dias</option>
+                        <option value="all">Todo período</option>
+                    </select></div>
+                    <div class="filter-group"><label>Produto</label><select id="productFilter" onchange="updateDashboard()"><option value="all">Todos</option></select></div>
+                    <div class="filter-group"><label>Tipo de Ensaio</label><select id="testTypeFilter" onchange="updateDashboard()"><option value="all">Todos</option></select></div>
+                    <div class="filter-group"><label>Executante</label><select id="executorFilter" onchange="updateDashboard()"><option value="all">Todos</option></select></div>
+                    <div style="margin-left: auto;"><button class="btn btn-sm btn-ghost" onclick="resetFilters()">↺ Limpar</button></div>
                 </div>
 
                 <div class="kpi-grid" id="kpiGrid"></div>
 
                 <div class="charts-row">
                     <div class="card">
-                        <div class="card-header">
-                            <div><div class="card-title">Tendência de Ensaios</div><div class="card-subtitle">Aprovados × Reprovados ao longo do tempo</div></div>
-                        </div>
+                        <div class="card-header"><div><div class="card-title">📈 Tendência de Ensaios</div><div class="card-subtitle">Clique em um ponto para ver detalhes</div></div></div>
                         <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
                     </div>
                     <div class="card">
-                        <div class="card-header">
-                            <div><div class="card-title">Taxa de Aprovação</div><div class="card-subtitle">Performance global</div></div>
-                        </div>
-                        <div class="gauge-wrap">
+                        <div class="card-header"><div><div class="card-title">🎯 Taxa de Aprovação</div><div class="card-subtitle">Clique no gráfico para detalhes</div></div></div>
+                        <div class="gauge-wrap" onclick="showApprovalDetail()">
                             <canvas id="gaugeChart"></canvas>
-                            <div class="gauge-center">
-                                <div class="gauge-pct" id="gaugeValue">0%</div>
-                                <div class="gauge-lbl">aprovação</div>
-                            </div>
+                            <div class="gauge-center"><div class="gauge-pct" id="gaugeValue">0%</div><div class="gauge-lbl">aprovação</div></div>
                         </div>
                         <div class="gauge-stats">
                             <div style="text-align:center;"><div class="gauge-stat-val" style="color:var(--success);" id="gaugeApproved">0</div><div class="gauge-stat-lbl">Aprovados</div></div>
-                            <div style="text-align:center;"><div class="gauge-stat-val" style="color:var(--danger);"  id="gaugeRejected">0</div><div class="gauge-stat-lbl">Reprovados</div></div>
+                            <div style="text-align:center;"><div class="gauge-stat-val" style="color:var(--danger);" id="gaugeRejected">0</div><div class="gauge-stat-lbl">Reprovados</div></div>
                         </div>
                     </div>
                 </div>
 
                 <div class="charts-row">
                     <div class="card">
-                        <div class="card-header"><div><div class="card-title">Top Produtos por Volume</div><div class="card-subtitle">Quantidade de ensaios por PN</div></div></div>
+                        <div class="card-header"><div><div class="card-title">📊 Top Produtos por Volume</div><div class="card-subtitle">Clique em uma barra para ver ensaios do produto</div></div></div>
                         <div class="chart-wrap"><canvas id="productChart"></canvas></div>
                     </div>
                     <div class="card">
-                        <div class="card-header"><div><div class="card-title">Por Tipo de Ensaio</div><div class="card-subtitle">Distribuição</div></div></div>
-                        <div class="chart-wrap-sm"><canvas id="typeChart" style="height:220px;"></canvas></div>
+                        <div class="card-header"><div><div class="card-title">🥧 Por Tipo de Ensaio</div><div class="card-subtitle">Clique em uma fatia para filtrar por tipo</div></div></div>
+                        <div class="chart-wrap"><canvas id="typeChart" style="height:220px;"></canvas></div>
                     </div>
                 </div>
 
                 <div class="list-row">
                     <div class="card">
-                        <div class="card-header"><div><div class="card-title">⚠️ Mais Reprovações</div><div class="card-subtitle">Produtos com maior taxa de falha</div></div></div>
+                        <div class="card-header"><div><div class="card-title">⚠️ Mais Reprovações</div><div class="card-subtitle">Clique em um produto para ver detalhes</div></div></div>
                         <div id="rejectedList"></div>
                     </div>
                     <div class="card">
-                        <div class="card-header"><div><div class="card-title">Ensaios Recentes</div><div class="card-subtitle">Últimos registros</div></div></div>
+                        <div class="card-header"><div><div class="card-title">🕐 Ensaios Recentes</div><div class="card-subtitle">Clique em um ensaio para ver detalhes</div></div></div>
                         <div id="recentList"></div>
                     </div>
                 </div>
@@ -504,294 +400,132 @@
             <!-- PRODUCTS -->
             <div id="products" class="section">
                 <div class="card">
-                    <div class="card-header">
-                        <div><div class="card-title">Produtos Cadastrados</div><div class="card-subtitle">Gerencie especificações e tipos de ensaio</div></div>
+                    <div class="card-header"><div><div class="card-title">Produtos Cadastrados</div><div class="card-subtitle">Gerencie especificações e tipos de ensaio</div></div>
                         <button class="btn btn-primary" onclick="openProductModal()">+ Novo Produto</button>
                     </div>
-                    <div class="search-row">
-                        <div class="search-wrap">
-                            <span class="search-icon">🔍</span>
-                            <input type="text" id="productSearch" placeholder="Buscar PN ou descrição..." oninput="renderProducts()">
-                        </div>
-                    </div>
-                    <div class="table-wrap">
-                        <table>
-                            <thead><tr><th>PN</th><th>Descrição</th><th>Tipo de Ensaio</th><th>Unidade</th><th>Especificação</th><th>Ações</th></tr></thead>
-                            <tbody id="productsTableBody"></tbody>
-                        </table>
-                    </div>
+                    <div class="search-row"><div class="search-wrap"><span class="search-icon">🔍</span><input type="text" id="productSearch" placeholder="Buscar PN ou descrição..." oninput="renderProducts()"></div></div>
+                    <div class="table-wrap"><table><thead><tr><th>PN</th><th>Descrição</th><th>Tipo de Ensaio</th><th>Unidade</th><th>Especificação</th><th>Ações</th></tr></thead><tbody id="productsTableBody"></tbody></table></div>
                 </div>
             </div>
 
             <!-- TESTS -->
             <div id="tests" class="section">
                 <div class="card">
-                    <div class="card-header">
-                        <div><div class="card-title">Ensaios Realizados</div><div class="card-subtitle">Todos os registros de ensaio</div></div>
+                    <div class="card-header"><div><div class="card-title">Ensaios Realizados</div><div class="card-subtitle">Todos os registros de ensaio</div></div>
                         <button class="btn btn-primary" onclick="openTestModal()">+ Novo Ensaio</button>
                     </div>
-                    <div class="search-row">
-                        <div class="search-wrap">
-                            <span class="search-icon">🔍</span>
-                            <input type="text" id="testSearch" placeholder="Buscar PN, solicitante ou executante..." oninput="renderTests()">
-                        </div>
-                    </div>
-                    <div class="table-wrap">
-                        <table>
-                            <thead><tr><th>Data</th><th>PN</th><th>Tipo</th><th>Especificação</th><th>Solicitante</th><th>Executante</th><th>Início</th><th>Fim</th><th>Resultado</th><th>Status</th><th>Ações</th></tr></thead>
-                            <tbody id="testsTableBody"></tbody>
-                        </table>
-                    </div>
+                    <div class="search-row"><div class="search-wrap"><span class="search-icon">🔍</span><input type="text" id="testSearch" placeholder="Buscar PN, solicitante ou executante..." oninput="renderTests()"></div></div>
+                    <div class="table-wrap"><table><thead><tr><th>Data</th><th>PN</th><th>Tipo</th><th>Especificação</th><th>Solicitante</th><th>Executante</th><th>Início</th><th>Fim</th><th>Resultado</th><th>Status</th><th>Ações</th></tr></thead><tbody id="testsTableBody"></tbody></table></div>
                 </div>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-bg" id="detailModal">
+    <div class="modal detail-modal">
+        <div class="modal-head"><div class="modal-title" id="detailTitle">Detalhes</div><button class="btn btn-ghost btn-sm" onclick="closeModal('detailModal')">✕</button></div>
+        <div id="detailContent"></div>
+        <div class="form-actions"><button class="btn btn-primary" onclick="closeModal('detailModal')">Fechar</button></div>
     </div>
 </div>
 
 <!-- PRODUCT MODAL -->
-<div class="modal-bg" id="productModal">
-    <div class="modal">
-        <div class="modal-head">
-            <div class="modal-title" id="productModalTitle">Novo Produto</div>
-            <button class="btn btn-ghost btn-sm" onclick="closeModal('productModal')">✕</button>
-        </div>
-        <form id="productForm" onsubmit="saveProduct(event)">
-            <input type="hidden" id="productId">
-            <div class="form-row">
-                <div class="form-group"><label>PN (Part Number) *</label><input type="text" id="productPn" required placeholder="Ex: PN-12345"></div>
-                <div class="form-group"><label>Unidade de Medida *</label><input type="text" id="productUnit" required placeholder="Ex: MPa, HB, J"></div>
-            </div>
-            <div class="form-group"><label>Descrição *</label><input type="text" id="productDescription" required placeholder="Descrição do produto"></div>
-            <div class="form-row">
-                <div class="form-group"><label>Tipo de Ensaio *</label><input type="text" id="productTestType" required placeholder="Ex: Tração, Dureza, Impacto"></div>
-                <div class="form-group"><label>Especificação Técnica *</label><input type="text" id="productSpec" required placeholder="Ex: ≥ 50, ≤ 200"><div class="spec-hint">Use ≥ para mínimo ou ≤ para máximo exigido</div></div>
-            </div>
-            <div class="form-actions">
-                <button type="button" class="btn" onclick="closeModal('productModal')">Cancelar</button>
-                <button type="submit" class="btn btn-primary">Salvar</button>
-            </div>
-        </form>
-    </div>
-</div>
+<div class="modal-bg" id="productModal"><div class="modal"><div class="modal-head"><div class="modal-title" id="productModalTitle">Novo Produto</div><button class="btn btn-ghost btn-sm" onclick="closeModal('productModal')">✕</button></div>
+<form id="productForm" onsubmit="saveProduct(event)"><input type="hidden" id="productId"><div class="form-row"><div class="form-group"><label>PN *</label><input type="text" id="productPn" required placeholder="Ex: PN-12345"></div><div class="form-group"><label>Unidade *</label><input type="text" id="productUnit" required placeholder="Ex: MPa"></div></div>
+<div class="form-group"><label>Descrição *</label><input type="text" id="productDescription" required placeholder="Descrição do produto"></div>
+<div class="form-row"><div class="form-group"><label>Tipo de Ensaio *</label><input type="text" id="productTestType" required placeholder="Ex: Tração"></div><div class="form-group"><label>Especificação *</label><input type="text" id="productSpec" required placeholder="Ex: ≥ 50"><div class="spec-hint">Use ≥ para mínimo ou ≤ para máximo</div></div></div>
+<div class="form-actions"><button type="button" class="btn" onclick="closeModal('productModal')">Cancelar</button><button type="submit" class="btn btn-primary">Salvar</button></div></form></div></div>
 
 <!-- TEST MODAL -->
-<div class="modal-bg" id="testModal">
-    <div class="modal">
-        <div class="modal-head">
-            <div class="modal-title" id="testModalTitle">Novo Ensaio</div>
-            <button class="btn btn-ghost btn-sm" onclick="closeModal('testModal')">✕</button>
-        </div>
-        <form id="testForm" onsubmit="saveTest(event)">
-            <input type="hidden" id="testId">
-            <div class="form-row">
-                <div class="form-group"><label>Produto *</label><select id="testProduct" required onchange="updateTestSpecInfo()"><option value="">Selecione...</option></select></div>
-                <div class="form-group"><label>Data *</label><input type="date" id="testDate" required></div>
-            </div>
-            <div class="form-row">
-                <div class="form-group"><label>Solicitante *</label><input type="text" id="testRequester" required placeholder="Nome do solicitante"></div>
-                <div class="form-group"><label>Executante *</label><input type="text" id="testExecutor" required placeholder="Nome do executante"></div>
-            </div>
-            <div class="form-row">
-                <div class="form-group"><label>Início *</label><input type="time" id="testStartTime" required></div>
-                <div class="form-group"><label>Término *</label><input type="time" id="testEndTime" required></div>
-            </div>
-            <div class="form-group">
-                <label>Resultado *</label>
-                <input type="number" id="testResult" required step="0.01" placeholder="Valor obtido no ensaio">
-                <div class="spec-hint" id="testSpecInfo"></div>
-            </div>
-            <div class="form-group"><label>Observações</label><input type="text" id="testNotes" placeholder="Observações adicionais (opcional)"></div>
-            <div class="form-actions">
-                <button type="button" class="btn" onclick="closeModal('testModal')">Cancelar</button>
-                <button type="submit" class="btn btn-primary">Salvar</button>
-            </div>
-        </form>
-    </div>
-</div>
+<div class="modal-bg" id="testModal"><div class="modal"><div class="modal-head"><div class="modal-title" id="testModalTitle">Novo Ensaio</div><button class="btn btn-ghost btn-sm" onclick="closeModal('testModal')">✕</button></div>
+<form id="testForm" onsubmit="saveTest(event)"><input type="hidden" id="testId"><div class="form-row"><div class="form-group"><label>Produto *</label><select id="testProduct" required onchange="updateTestSpecInfo()"><option value="">Selecione...</option></select></div><div class="form-group"><label>Data *</label><input type="date" id="testDate" required></div></div>
+<div class="form-row"><div class="form-group"><label>Solicitante *</label><input type="text" id="testRequester" required placeholder="Nome"></div><div class="form-group"><label>Executante *</label><input type="text" id="testExecutor" required placeholder="Nome"></div></div>
+<div class="form-row"><div class="form-group"><label>Início *</label><input type="time" id="testStartTime" required></div><div class="form-group"><label>Término *</label><input type="time" id="testEndTime" required></div></div>
+<div class="form-group"><label>Resultado *</label><input type="number" id="testResult" required step="0.01" placeholder="Valor obtido"><div class="spec-hint" id="testSpecInfo"></div></div>
+<div class="form-group"><label>Observações</label><input type="text" id="testNotes" placeholder="Observações"></div>
+<div class="form-actions"><button type="button" class="btn" onclick="closeModal('testModal')">Cancelar</button><button type="submit" class="btn btn-primary">Salvar</button></div></form></div></div>
 
 <!-- PRINT MODAL -->
-<div class="print-modal-bg" id="printModal">
-    <div class="print-modal">
-        <div class="pm-header"><div class="pm-title">🖨️ Imprimir Relatório</div><button class="btn btn-ghost btn-sm" onclick="closePrintModal()">✕</button></div>
-        <div class="pm-body">
-            <div class="pm-section">
-                <div class="pm-section-label">Seções do Relatório</div>
-                <div class="pm-checkgrid">
-                    <label class="pm-check selected" id="chkKpi"><input type="checkbox" value="kpi" checked onchange="togglePrintCheck(this, 'chkKpi')"><span>📊</span><span>Indicadores KPI</span></label>
-                    <label class="pm-check selected" id="chkApproval"><input type="checkbox" value="approval" checked onchange="togglePrintCheck(this, 'chkApproval')"><span>✅</span><span>Taxa de Aprovação</span></label>
-                    <label class="pm-check selected" id="chkRejected"><input type="checkbox" value="rejected" checked onchange="togglePrintCheck(this, 'chkRejected')"><span>⚠️</span><span>Mais Reprovações</span></label>
-                    <label class="pm-check selected" id="chkByProduct"><input type="checkbox" value="byProduct" checked onchange="togglePrintCheck(this, 'chkByProduct')"><span>📦</span><span>Por Produto</span></label>
-                    <label class="pm-check selected" id="chkByType"><input type="checkbox" value="byType" checked onchange="togglePrintCheck(this, 'chkByType')"><span>🧪</span><span>Por Tipo de Ensaio</span></label>
-                    <label class="pm-check selected" id="chkAllTests"><input type="checkbox" value="allTests" checked onchange="togglePrintCheck(this, 'chkAllTests')"><span>📋</span><span>Tabela de Ensaios</span></label>
-                </div>
-            </div>
-        </div>
-        <div class="pm-footer">
-            <button class="btn" onclick="closePrintModal()">Cancelar</button>
-            <button class="btn btn-print" onclick="executePrint()">🖨️ Gerar PDF</button>
-        </div>
-    </div>
-</div>
+<div class="print-modal-bg" id="printModal"><div class="print-modal"><div class="pm-header"><div class="pm-title">🖨️ Imprimir Relatório</div><button class="btn btn-ghost btn-sm" onclick="closePrintModal()">✕</button></div>
+<div class="pm-body"><div class="pm-section"><div class="pm-section-label">Seções do Relatório</div><div class="pm-checkgrid">
+    <label class="pm-check selected" id="chkKpi"><input type="checkbox" value="kpi" checked onchange="togglePrintCheck(this, 'chkKpi')"><span>📊</span><span>Indicadores KPI</span></label>
+    <label class="pm-check selected" id="chkApproval"><input type="checkbox" value="approval" checked onchange="togglePrintCheck(this, 'chkApproval')"><span>✅</span><span>Taxa de Aprovação</span></label>
+    <label class="pm-check selected" id="chkRejected"><input type="checkbox" value="rejected" checked onchange="togglePrintCheck(this, 'chkRejected')"><span>⚠️</span><span>Mais Reprovações</span></label>
+    <label class="pm-check selected" id="chkByProduct"><input type="checkbox" value="byProduct" checked onchange="togglePrintCheck(this, 'chkByProduct')"><span>📦</span><span>Por Produto</span></label>
+    <label class="pm-check selected" id="chkByType"><input type="checkbox" value="byType" checked onchange="togglePrintCheck(this, 'chkByType')"><span>🧪</span><span>Por Tipo de Ensaio</span></label>
+    <label class="pm-check selected" id="chkAllTests"><input type="checkbox" value="allTests" checked onchange="togglePrintCheck(this, 'chkAllTests')"><span>📋</span><span>Tabela de Ensaios</span></label>
+</div></div></div>
+<div class="pm-footer"><button class="btn" onclick="closePrintModal()">Cancelar</button><button class="btn btn-print" onclick="executePrint()">🖨️ Gerar PDF</button></div></div></div>
 
-<!-- TOAST -->
 <div class="toast-area" id="toastArea"></div>
 
 <script>
-// ────────────────────────────────────────────────────────────
-// GLOBALS
-// ────────────────────────────────────────────────────────────
 let products = [];
 let tests    = [];
 let trendChart, gaugeChart, productChart, typeChart;
 let unsubProducts = null, unsubTests = null;
 let _fb = null;
 
-// ────────────────────────────────────────────────────────────
-// WAIT FOR FIREBASE
-// ────────────────────────────────────────────────────────────
-function waitForFirebase(cb) {
-    if (window._fb) { _fb = window._fb; cb(); }
-    else setTimeout(() => waitForFirebase(cb), 50);
-}
-
+function waitForFirebase(cb) { if (window._fb) { _fb = window._fb; cb(); } else setTimeout(() => waitForFirebase(cb), 50); }
 waitForFirebase(initApp);
 
-// ────────────────────────────────────────────────────────────
-// INIT
-// ────────────────────────────────────────────────────────────
 async function initApp() {
     const t = localStorage.getItem('qa_theme') || 'dark';
     applyTheme(t);
-    
-    // Initialize anonymous auth
-    try {
-        await _fb.initAnonymousAuth();
-        console.log("Firebase initialized with anonymous auth");
-    } catch(e) {
-        console.warn("Anonymous auth failed, continuing in read-only mode:", e);
-    }
-    
-    // Start listeners
+    try { await _fb.initAnonymousAuth(); } catch(e) { console.warn(e); }
     startListeners();
-    
-    // Hide loading after initial data load
     setTimeout(() => hideLoading(), 1000);
 }
 
-function hideLoading() {
-    const el = document.getElementById('loadingOverlay');
-    el.classList.add('hidden');
-    setTimeout(() => el.style.display = 'none', 350);
-}
+function hideLoading() { const el = document.getElementById('loadingOverlay'); el.classList.add('hidden'); setTimeout(() => el.style.display = 'none', 350); }
 
-// ────────────────────────────────────────────────────────────
-// FIRESTORE REAL-TIME LISTENERS
-// ────────────────────────────────────────────────────────────
 function startListeners() {
     const { db, collection, query, orderBy, onSnapshot } = _fb;
-
-    // Products
-    unsubProducts = onSnapshot(
-        query(collection(db, 'products'), orderBy('pn')),
-        snap => {
-            products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            renderProducts();
-            updateFilterOptions();
-            updateDashboard();
-
-            const sel = document.getElementById('testProduct');
-            if (sel) {
-                const cur = sel.value;
-                while (sel.options.length > 1) sel.remove(1);
-                products.forEach(p => sel.add(new Option(p.pn + ' — ' + p.description + ' (' + p.unit + ')', p.id)));
-                if (cur && [...sel.options].some(o => o.value === cur)) sel.value = cur;
-            }
-        },
-        err => {
-            console.error("Products listener error:", err);
-            toast('Erro ao carregar produtos: ' + err.message, 'error');
-        }
-    );
-
-    // Tests
-    unsubTests = onSnapshot(
-        query(collection(db, 'tests'), orderBy('date', 'desc')),
-        snap => {
-            tests = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            renderTests();
-            updateFilterOptions();
-            updateDashboard();
-        },
-        err => {
-            console.error("Tests listener error:", err);
-            if (err.code !== 'permission-denied')
-                toast('Erro ao carregar ensaios: ' + err.message, 'error');
-        }
-    );
+    unsubProducts = onSnapshot(query(collection(db, 'products'), orderBy('pn')), snap => {
+        products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderProducts(); updateFilterOptions(); updateDashboard();
+        const sel = document.getElementById('testProduct');
+        if (sel) { const cur = sel.value; while (sel.options.length > 1) sel.remove(1);
+            products.forEach(p => sel.add(new Option(p.pn + ' — ' + p.description + ' (' + p.unit + ')', p.id)));
+            if (cur && [...sel.options].some(o => o.value === cur)) sel.value = cur; }
+    });
+    unsubTests = onSnapshot(query(collection(db, 'tests'), orderBy('date', 'desc')), snap => {
+        tests = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderTests(); updateFilterOptions(); updateDashboard();
+    });
 }
 
-// ────────────────────────────────────────────────────────────
-// THEME
-// ────────────────────────────────────────────────────────────
-function applyTheme(t) {
-    document.body.setAttribute('data-theme', t);
-    localStorage.setItem('qa_theme', t);
-    const themeIcon = document.getElementById('themeIcon');
-    const themeLabel = document.getElementById('themeLabel');
+function applyTheme(t) { document.body.setAttribute('data-theme', t); localStorage.setItem('qa_theme', t);
+    const themeIcon = document.getElementById('themeIcon'); const themeLabel = document.getElementById('themeLabel');
     if (themeIcon) themeIcon.textContent = t === 'dark' ? '☀️' : '🌙';
-    if (themeLabel) themeLabel.textContent = t === 'dark' ? 'Tema Claro' : 'Tema Escuro';
-}
-
-function toggleTheme() {
-    const cur = document.body.getAttribute('data-theme');
-    applyTheme(cur === 'dark' ? 'light' : 'dark');
-    setTimeout(updateDashboard, 50);
-}
-
-// ────────────────────────────────────────────────────────────
-// NAVIGATION
-// ────────────────────────────────────────────────────────────
-const sectionTitles = { dashboard:'Dashboard', products:'Produtos', tests:'Ensaios' };
+    if (themeLabel) themeLabel.textContent = t === 'dark' ? 'Tema Claro' : 'Tema Escuro'; }
+function toggleTheme() { const cur = document.body.getAttribute('data-theme'); applyTheme(cur === 'dark' ? 'light' : 'dark'); setTimeout(updateDashboard, 50); }
 
 function showSection(id, el) {
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    if (el) el.classList.add('active');
-    const titleEl = document.getElementById('topbarTitle');
-    if (titleEl) titleEl.textContent = sectionTitles[id];
+    document.getElementById(id).classList.add('active'); if (el) el.classList.add('active');
+    const titleEl = document.getElementById('topbarTitle'); if (titleEl) titleEl.textContent = id === 'dashboard' ? 'Dashboard' : (id === 'products' ? 'Produtos' : 'Ensaios');
     if (id === 'dashboard') updateDashboard();
-    if (id === 'products')  renderProducts();
-    if (id === 'tests')     renderTests();
+    if (id === 'products') renderProducts();
+    if (id === 'tests') renderTests();
 }
 
-// ────────────────────────────────────────────────────────────
-// FILTERS
-// ────────────────────────────────────────────────────────────
 function updateFilterOptions() {
-    const pf = document.getElementById('productFilter');
-    const tf = document.getElementById('testTypeFilter');
-    const ef = document.getElementById('executorFilter');
-    if (!pf || !tf || !ef) return;
-
+    const pf = document.getElementById('productFilter'), tf = document.getElementById('testTypeFilter'), ef = document.getElementById('executorFilter');
+    if (!pf) return;
     [pf, tf, ef].forEach(s => { while(s.options.length > 1) s.remove(1); });
-
     const types = new Set(), execs = new Set();
     products.forEach(p => { pf.add(new Option(p.pn + ' — ' + p.description, p.id)); types.add(p.testType); });
     tests.forEach(t => execs.add(t.executor));
-    types.forEach(t => tf.add(new Option(t, t)));
-    execs.forEach(e => ef.add(new Option(e, e)));
+    types.forEach(t => tf.add(new Option(t, t))); execs.forEach(e => ef.add(new Option(e, e)));
 }
 
 function resetFilters() {
-    const period = document.getElementById('periodFilter');
-    const product = document.getElementById('productFilter');
-    const testType = document.getElementById('testTypeFilter');
-    const executor = document.getElementById('executorFilter');
-    if (period) period.value = '30';
-    if (product) product.value = 'all';
-    if (testType) testType.value = 'all';
-    if (executor) executor.value = 'all';
+    const period = document.getElementById('periodFilter'), product = document.getElementById('productFilter'), testType = document.getElementById('testTypeFilter'), executor = document.getElementById('executorFilter');
+    if (period) period.value = '30'; if (product) product.value = 'all'; if (testType) testType.value = 'all'; if (executor) executor.value = 'all';
     updateDashboard();
 }
 
@@ -801,72 +535,45 @@ function getFilteredTests() {
     const typeF  = document.getElementById('testTypeFilter')?.value || 'all';
     const execF  = document.getElementById('executorFilter')?.value || 'all';
     let f = [...tests];
-    if (period !== 'all') {
-        const cut = new Date(); cut.setDate(cut.getDate() - parseInt(period));
-        f = f.filter(t => new Date(t.date) >= cut);
-    }
+    if (period !== 'all') { const cut = new Date(); cut.setDate(cut.getDate() - parseInt(period)); f = f.filter(t => new Date(t.date) >= cut); }
     if (prodF !== 'all') f = f.filter(t => t.productId === prodF);
     if (typeF !== 'all') f = f.filter(t => { const p = products.find(p => p.id === t.productId); return p?.testType === typeF; });
     if (execF !== 'all') f = f.filter(t => t.executor === execF);
     return f;
 }
 
-// ────────────────────────────────────────────────────────────
-// DASHBOARD
-// ────────────────────────────────────────────────────────────
-function updateDashboard() {
-    const f = getFilteredTests();
-    renderKPIs(f);
-    renderTrendChart(f);
-    renderGaugeChart(f);
-    renderProductChart(f);
-    renderTypeChart(f);
-    renderRejectedList(f);
-    renderRecentList(f);
-}
-
+function updateDashboard() { const f = getFilteredTests(); renderKPIs(f); renderTrendChart(f); renderGaugeChart(f); renderProductChart(f); renderTypeChart(f); renderRejectedList(f); renderRecentList(f); }
 function isDark() { return document.body.getAttribute('data-theme') === 'dark'; }
-function chartColors() {
-    return { text: isDark() ? '#b0bfd8' : '#3a4f6a', grid: isDark() ? '#1e2a3a' : '#dde4f0', legend: isDark() ? '#e8f0ff' : '#0d1626' };
-}
+function chartColors() { return { text: isDark() ? '#b0bfd8' : '#3a4f6a', grid: isDark() ? '#1e2a3a' : '#dde4f0', legend: isDark() ? '#e8f0ff' : '#0d1626' }; }
 
 function renderKPIs(f) {
-    const total    = f.length;
-    const approved = f.filter(t => t.status === 'Aprovado').length;
-    const rejected = total - approved;
-    const rate     = total ? (approved / total * 100).toFixed(1) : 0;
-    const execs    = new Set(f.map(t => t.executor)).size;
-    const durs     = f.map(t => {
-        const s = new Date(t.date + 'T' + t.startTime); const e = new Date(t.date + 'T' + t.endTime);
-        return Math.max(0, (e - s) / 60000);
-    }).filter(d => d > 0);
+    const total = f.length, approved = f.filter(t => t.status === 'Aprovado').length, rejected = total - approved, rate = total ? (approved/total*100).toFixed(1) : 0;
+    const execs = new Set(f.map(t => t.executor)).size;
+    const durs = f.map(t => { const s = new Date(t.date+'T'+t.startTime); const e = new Date(t.date+'T'+t.endTime); return Math.max(0, (e - s) / 60000); }).filter(d => d > 0);
     const avgDur = durs.length ? Math.round(durs.reduce((a,b)=>a+b,0)/durs.length) : 0;
     const kpis = [
-        { label:'Total Ensaios',  value:total,        color:'c-primary', icon:'◉' },
-        { label:'Aprovados',      value:approved,     color:'c-success', icon:'✓' },
-        { label:'Reprovados',     value:rejected,     color:'c-danger',  icon:'✕' },
-        { label:'Taxa Aprovação', value:rate+'%',      color:'c-accent',  icon:'↑' },
-        { label:'Executantes',    value:execs,        color:'c-primary', icon:'👤' },
-        { label:'Duração Média',  value:avgDur+'min', color:'c-warning', icon:'⏱' },
+        { label:'Total Ensaios', value:total, color:'c-primary', icon:'◉', onclick:()=>showDetail('Total de Ensaios', `Foram realizados <strong>${total}</strong> ensaios no período.`, '📊') },
+        { label:'Aprovados', value:approved, color:'c-success', icon:'✓', onclick:()=>showDetail('Ensaios Aprovados', `<strong>${approved}</strong> ensaios foram aprovados.<br>Taxa: ${rate}%`, '✅') },
+        { label:'Reprovados', value:rejected, color:'c-danger', icon:'✕', onclick:()=>showDetail('Ensaios Reprovados', `<strong>${rejected}</strong> ensaios foram reprovados.<br>Taxa de falha: ${(100-rate).toFixed(1)}%`, '❌') },
+        { label:'Taxa Aprovação', value:rate+'%', color:'c-accent', icon:'↑', onclick:()=>showApprovalDetail() },
+        { label:'Executantes', value:execs, color:'c-primary', icon:'👤', onclick:()=>showDetail('Executantes', `${execs} profissionais realizaram ensaios no período.`, '👥') },
+        { label:'Duração Média', value:avgDur+'min', color:'c-warning', icon:'⏱', onclick:()=>showDetail('Duração Média', `Tempo médio por ensaio: <strong>${avgDur} minutos</strong>.`, '⏰') }
     ];
     const grid = document.getElementById('kpiGrid');
-    if (grid) grid.innerHTML = kpis.map(k => `
-        <div class="kpi-card ${k.color}">
-            <div class="kpi-label">${k.label}</div>
-            <div class="kpi-value ${k.color}">${k.value}</div>
-            <div class="kpi-icon">${k.icon}</div>
-        </div>`).join('');
+    if (grid) grid.innerHTML = kpis.map(k => `<div class="kpi-card ${k.color}" onclick="${k.onclick ? '(' + k.onclick.toString() + ')()' : ''}"><div class="kpi-label">${k.label}</div><div class="kpi-value ${k.color}">${k.value}</div><div class="kpi-icon">${k.icon}</div></div>`).join('');
+}
+
+function showApprovalDetail() {
+    const f = getFilteredTests(); const total = f.length, approved = f.filter(t=>t.status==='Aprovado').length, rejected = total - approved, rate = total ? (approved/total*100).toFixed(1) : 0;
+    showDetail('Taxa de Aprovação', `<div style="text-align:center;padding:12px;"><div style="font-size:3rem;font-weight:800;color:var(--success);">${rate}%</div><div>de aprovação</div><div style="margin-top:16px;"><span style="color:var(--success);">✓ ${approved} aprovados</span> | <span style="color:var(--danger);">✕ ${rejected} reprovados</span></div></div>`, '🎯');
 }
 
 function renderTrendChart(f) {
-    const ctx = document.getElementById('trendChart')?.getContext('2d');
-    if (!ctx) return;
-    const days = parseInt(document.getElementById('periodFilter')?.value) || 30;
-    const cc   = chartColors();
+    const ctx = document.getElementById('trendChart')?.getContext('2d'); if (!ctx) return;
+    const days = parseInt(document.getElementById('periodFilter')?.value) || 30; const cc = chartColors();
     const dates = [], approved = [], rejected = [];
     for (let i = days-1; i >= 0; i--) {
-        const d = new Date(); d.setDate(d.getDate() - i);
-        const ds = d.toISOString().split('T')[0];
+        const d = new Date(); d.setDate(d.getDate() - i); const ds = d.toISOString().split('T')[0];
         const day = f.filter(t => t.date === ds);
         dates.push(d.toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit'}));
         approved.push(day.filter(t => t.status === 'Aprovado').length);
@@ -876,28 +583,21 @@ function renderTrendChart(f) {
     trendChart = new Chart(ctx, {
         type:'line',
         data:{ labels:dates, datasets:[
-            { label:'Aprovado',  data:approved, borderColor:'#22d3a0', backgroundColor:'rgba(34,211,160,0.08)', fill:true, tension:0.4, pointRadius:3, borderWidth:2 },
-            { label:'Reprovado', data:rejected, borderColor:'#ff5a6e', backgroundColor:'rgba(255,90,110,0.08)',  fill:true, tension:0.4, pointRadius:3, borderWidth:2 }
+            { label:'Aprovado', data:approved, borderColor:'#22d3a0', backgroundColor:'rgba(34,211,160,0.08)', fill:true, tension:0.4, pointRadius:5, pointHoverRadius:8, borderWidth:2 },
+            { label:'Reprovado', data:rejected, borderColor:'#ff5a6e', backgroundColor:'rgba(255,90,110,0.08)', fill:true, tension:0.4, pointRadius:5, pointHoverRadius:8, borderWidth:2 }
         ]},
-        options:{ responsive:true, maintainAspectRatio:false,
-            plugins:{ legend:{labels:{color:cc.legend,font:{size:11}}} },
+        options:{ responsive:true, maintainAspectRatio:false, onClick:(e,active)=>{ if(active.length){ const idx=active[0].dataIndex; const date=dates[idx]; showDetail(`Detalhes - ${date}`, `No dia ${date}:<br>✓ Aprovados: ${approved[idx]}<br>✕ Reprovados: ${rejected[idx]}<br>📊 Total: ${approved[idx]+rejected[idx]} ensaios`, '📅'); } },
+            plugins:{ legend:{labels:{color:cc.legend,font:{size:11}}}, tooltip:{callbacks:{label:(ctx)=>`${ctx.dataset.label}: ${ctx.raw} ensaios`}} },
             scales:{ x:{ticks:{color:cc.text,font:{size:10}},grid:{color:cc.grid}}, y:{ticks:{color:cc.text,font:{size:10}},grid:{color:cc.grid},beginAtZero:true} }
         }
     });
 }
 
 function renderGaugeChart(f) {
-    const ctx = document.getElementById('gaugeChart')?.getContext('2d');
-    if (!ctx) return;
-    const total    = f.length;
-    const approved = f.filter(t => t.status === 'Aprovado').length;
-    const rate     = total ? Math.round(approved/total*100) : 0;
-    const gaugeVal = document.getElementById('gaugeValue');
-    const gaugeApp = document.getElementById('gaugeApproved');
-    const gaugeRej = document.getElementById('gaugeRejected');
-    if (gaugeVal) gaugeVal.textContent = rate+'%';
-    if (gaugeApp) gaugeApp.textContent = approved;
-    if (gaugeRej) gaugeRej.textContent = total - approved;
+    const ctx = document.getElementById('gaugeChart')?.getContext('2d'); if (!ctx) return;
+    const total = f.length, approved = f.filter(t => t.status === 'Aprovado').length, rate = total ? Math.round(approved/total*100) : 0;
+    const gaugeVal = document.getElementById('gaugeValue'); const gaugeApp = document.getElementById('gaugeApproved'); const gaugeRej = document.getElementById('gaugeRejected');
+    if (gaugeVal) gaugeVal.textContent = rate+'%'; if (gaugeApp) gaugeApp.textContent = approved; if (gaugeRej) gaugeRej.textContent = total - approved;
     if (gaugeChart) gaugeChart.destroy();
     gaugeChart = new Chart(ctx, {
         type:'doughnut',
@@ -907,62 +607,59 @@ function renderGaugeChart(f) {
 }
 
 function renderProductChart(f) {
-    const ctx = document.getElementById('productChart')?.getContext('2d');
-    if (!ctx) return;
-    const cc = chartColors();
-    const map = new Map();
-    f.forEach(t => {
-        const p = products.find(p => p.id === t.productId);
-        if (!p) return;
-        if (!map.has(p.pn)) map.set(p.pn, {a:0,r:0});
-        const d = map.get(p.pn);
-        t.status === 'Aprovado' ? d.a++ : d.r++;
-    });
+    const ctx = document.getElementById('productChart')?.getContext('2d'); if (!ctx) return;
+    const cc = chartColors(); const map = new Map();
+    f.forEach(t => { const p = products.find(p => p.id === t.productId); if (!p) return;
+        if (!map.has(p.pn)) map.set(p.pn, {a:0,r:0,id:p.id});
+        const d = map.get(p.pn); t.status === 'Aprovado' ? d.a++ : d.r++; });
     const sorted = [...map.entries()].sort((a,b) => (b[1].a+b[1].r)-(a[1].a+a[1].r)).slice(0,8);
     if (productChart) productChart.destroy();
     productChart = new Chart(ctx, {
         type:'bar',
         data:{ labels:sorted.map(([pn])=>pn), datasets:[
-            {label:'Aprovado',  data:sorted.map(([,d])=>d.a), backgroundColor:'#22d3a0', stack:'s'},
+            {label:'Aprovado', data:sorted.map(([,d])=>d.a), backgroundColor:'#22d3a0', stack:'s'},
             {label:'Reprovado', data:sorted.map(([,d])=>d.r), backgroundColor:'#ff5a6e', stack:'s'}
         ]},
-        options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
-            plugins:{legend:{labels:{color:cc.legend,font:{size:11}}}},
-            scales:{x:{stacked:true,ticks:{color:cc.text,font:{size:10}},grid:{color:cc.grid}}, y:{stacked:true,ticks:{color:cc.text,font:{size:10}},grid:{display:false}}}
+        options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, onClick:(e,active)=>{ if(active.length){
+                const idx = active[0].datasetIndex === 0 ? active[0].dataIndex : active[0].dataIndex;
+                const pn = sorted[idx][0]; const prodData = sorted[idx][1];
+                showDetail(`Produto: ${pn}`, `<strong>${prodData.a} aprovados</strong> | <strong>${prodData.r} reprovados</strong><br>Total: ${prodData.a+prodData.r} ensaios<br>Taxa de aprovação: ${Math.round(prodData.a/(prodData.a+prodData.r)*100)}%`, '📦');
+            } },
+            plugins:{ legend:{labels:{color:cc.legend,font:{size:11}}}, tooltip:{callbacks:{label:(ctx)=>`${ctx.dataset.label}: ${ctx.raw} ensaios`}} },
+            scales:{ x:{stacked:true,ticks:{color:cc.text,font:{size:10}},grid:{color:cc.grid}}, y:{stacked:true,ticks:{color:cc.text,font:{size:10}},grid:{display:false}} }
         }
     });
 }
 
 function renderTypeChart(f) {
-    const ctx = document.getElementById('typeChart')?.getContext('2d');
-    if (!ctx) return;
+    const ctx = document.getElementById('typeChart')?.getContext('2d'); if (!ctx) return;
     const map = new Map();
     f.forEach(t => { const p = products.find(p => p.id === t.productId); if (!p) return; map.set(p.testType, (map.get(p.testType)||0)+1); });
     if (typeChart) typeChart.destroy();
     typeChart = new Chart(ctx, {
         type:'doughnut',
         data:{ labels:[...map.keys()], datasets:[{ data:[...map.values()], backgroundColor:['#4d9eff','#22d3a0','#ff5a6e','#ffb740','#a78bfa','#60e4fa'], borderWidth:0 }] },
-        options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{color:chartColors().legend,font:{size:10},padding:10}}} }
+        options:{ responsive:true, maintainAspectRatio:false, onClick:(e,active)=>{ if(active.length){
+                const idx = active[0].dataIndex; const type = [...map.keys()][idx]; const count = [...map.values()][idx];
+                showDetail(`Tipo de Ensaio: ${type}`, `<strong>${count}</strong> ensaios deste tipo<br>${((count/f.length)*100).toFixed(1)}% do total`, '🧪');
+                const typeFilter = document.getElementById('testTypeFilter'); if(typeFilter) { typeFilter.value = type; updateDashboard(); toast(`Filtrando por tipo: ${type}`); }
+            } },
+            plugins:{ legend:{position:'bottom',labels:{color:chartColors().legend,font:{size:10},padding:10}} }
+        }
     });
 }
 
 function renderRejectedList(f) {
     const map = new Map();
-    f.forEach(t => {
-        const p = products.find(p => p.id === t.productId);
-        if (!p) return;
-        if (!map.has(p.pn)) map.set(p.pn, {r:0,total:0});
-        const d = map.get(p.pn);
-        if (t.status === 'Reprovado') d.r++;
-        d.total++;
-    });
+    f.forEach(t => { const p = products.find(p => p.id === t.productId); if (!p) return;
+        if (!map.has(p.pn)) map.set(p.pn, {r:0,total:0,id:p.id,desc:p.description});
+        const d = map.get(p.pn); if (t.status === 'Reprovado') d.r++; d.total++; });
     const list = [...map.entries()].filter(([,d]) => d.r > 0).sort((a,b) => b[1].r - a[1].r).slice(0,5);
     const el = document.getElementById('rejectedList');
     if (!el) return;
     if (!list.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">🎉</div><p>Sem reprovações no período</p></div>'; return; }
-    el.innerHTML = list.map(([pn,d]) => {
-        const pct = Math.round(d.r/d.total*100);
-        return `<div class="list-item"><div style="flex:1;"><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span class="mono">${pn}</span><span style="font-size:0.78rem;color:var(--muted-fg);">${d.r}/${d.total} <span class="badge badge-danger">${pct}%</span></span></div><div class="prog"><div class="prog-fill" style="width:${pct}%"></div></div></div></div>`;
+    el.innerHTML = list.map(([pn,d]) => { const pct = Math.round(d.r/d.total*100);
+        return `<div class="list-item" onclick="showDetail('Produto: ${pn}', '<strong>${d.r} reprovações</strong> de ${d.total} ensaios<br>Taxa de falha: ${pct}%<br>Descrição: ${d.desc}', '⚠️')"><div style="flex:1;"><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span class="mono">${pn}</span><span style="font-size:0.78rem;color:var(--muted-fg);">${d.r}/${d.total} <span class="badge badge-danger">${pct}%</span></span></div><div class="prog"><div class="prog-fill" style="width:${pct}%"></div></div></div></div>`;
     }).join('');
 }
 
@@ -971,421 +668,188 @@ function renderRecentList(f) {
     const el = document.getElementById('recentList');
     if (!el) return;
     if (!recent.length) { el.innerHTML = '<div class="empty-state"><p>Sem ensaios no período</p></div>'; return; }
-    el.innerHTML = recent.map(t => {
-        const p = products.find(p => p.id === t.productId);
-        return `<div class="list-item">
-            <div style="flex:1;min-width:0;">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">
-                    <span class="mono">${p?.pn||'—'}</span>
-                    <span class="badge ${t.status==='Aprovado'?'badge-success':'badge-danger'}">${t.status}</span>
-                </div>
-                <div style="font-size:0.72rem;color:var(--muted-fg);">${p?.testType||'—'} · ${t.executor} · ${t.date}</div>
-            </div>
-            <div style="text-align:right;flex-shrink:0;margin-left:12px;">
-                <div class="mono">${t.result} ${p?.unit||''}</div>
-                <div style="font-size:0.68rem;color:var(--muted-fg);">${t.startTime}–${t.endTime}</div>
-            </div>
-        </div>`;
+    el.innerHTML = recent.map(t => { const p = products.find(p => p.id === t.productId);
+        return `<div class="list-item" onclick="showTestDetail('${t.id}')"><div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;"><span class="mono">${p?.pn||'—'}</span><span class="badge ${t.status==='Aprovado'?'badge-success':'badge-danger'}">${t.status}</span></div><div style="font-size:0.72rem;color:var(--muted-fg);">${p?.testType||'—'} · ${t.executor} · ${t.date}</div></div><div style="text-align:right;flex-shrink:0;margin-left:12px;"><div class="mono">${t.result} ${p?.unit||''}</div><div style="font-size:0.68rem;color:var(--muted-fg);">${t.startTime}–${t.endTime}</div></div></div>`;
     }).join('');
 }
 
-// ────────────────────────────────────────────────────────────
-// PRODUCTS TABLE
-// ────────────────────────────────────────────────────────────
-function renderProducts() {
-    const q  = (document.getElementById('productSearch')?.value||'').toLowerCase();
-    const f  = products.filter(p => p.pn.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
-    const tb = document.getElementById('productsTableBody');
-    if (!tb) return;
-    tb.innerHTML = f.length ? f.map(p => `
-        <tr>
-            <td class="mono">${p.pn}</td>
-            <td>${p.description}</td>
-            <td><span class="badge badge-warning">${p.testType}</span></td>
-            <td class="mono">${p.unit||'—'}</td>
-            <td class="mono">${p.spec} ${p.unit||''}</td>
-            <td><div class="table-actions"><button class="action-btn" onclick="editProduct('${p.id}')">✏️</button><button class="action-btn del" onclick="deleteProduct('${p.id}')">🗑️</button></div></td>
-        </tr>`).join('')
-    : '<tr><td colspan="6"><div class="empty-state"><p>Nenhum produto encontrado</p></div><tr></tr>';
+function showDetail(title, content, icon='ℹ️') {
+    document.getElementById('detailTitle').innerHTML = `${icon} ${title}`;
+    document.getElementById('detailContent').innerHTML = `<div class="detail-item"><div class="detail-value">${content}</div></div>`;
+    document.getElementById('detailModal').classList.add('open');
 }
 
-// ────────────────────────────────────────────────────────────
-// TESTS TABLE
-// ────────────────────────────────────────────────────────────
+function showTestDetail(testId) {
+    const test = tests.find(t => t.id === testId);
+    if (!test) return;
+    const product = products.find(p => p.id === test.productId);
+    showDetail('Detalhes do Ensaio', `
+        <div class="detail-item"><div class="detail-label">Produto</div><div class="detail-value">${product?.pn || '—'} - ${product?.description || ''}</div></div>
+        <div class="detail-item"><div class="detail-label">Data/Hora</div><div class="detail-value">${test.date} | ${test.startTime} - ${test.endTime}</div></div>
+        <div class="detail-item"><div class="detail-label">Solicitante / Executante</div><div class="detail-value">${test.requester || '—'} / ${test.executor}</div></div>
+        <div class="detail-item"><div class="detail-label">Resultado / Status</div><div class="detail-value">${test.result} ${product?.unit || ''} - <span style="color:${test.status==='Aprovado'?'var(--success)':'var(--danger)'}">${test.status}</span></div></div>
+        <div class="detail-item"><div class="detail-label">Especificação</div><div class="detail-value">${product?.spec || '—'} ${product?.unit || ''}</div></div>
+        ${test.notes ? `<div class="detail-item"><div class="detail-label">Observações</div><div class="detail-value">${test.notes}</div></div>` : ''}
+    `, '🔬');
+}
+
+function closeModal(id) { const el = document.getElementById(id); if (el) el.classList.remove('open'); }
+
+function renderProducts() {
+    const q = (document.getElementById('productSearch')?.value||'').toLowerCase();
+    const f = products.filter(p => p.pn.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
+    const tb = document.getElementById('productsTableBody');
+    if (!tb) return;
+    tb.innerHTML = f.length ? f.map(p => `<tr onclick="showProductDetail('${p.id}')" style="cursor:pointer">\n            <td class="mono">${p.pn}</td>\n            <td>${p.description}</td>\n            <td><span class="badge badge-warning">${p.testType}</span></td>\n            <td class="mono">${p.unit||'—'}</td>\n            <td class="mono">${p.spec} ${p.unit||''}</td>\n            <td><div class="table-actions" onclick="event.stopPropagation()"><button class="action-btn" onclick="editProduct('${p.id}')">✏️</button><button class="action-btn del" onclick="deleteProduct('${p.id}')">🗑️</button></div></td>\n        </tr>`).join('') : '<tr><td colspan="6"><div class="empty-state"><p>Nenhum produto encontrado</p></div></td></tr>';
+}
+
+function showProductDetail(productId) {
+    const p = products.find(p => p.id === productId);
+    if (!p) return;
+    const relatedTests = tests.filter(t => t.productId === productId);
+    const approved = relatedTests.filter(t => t.status === 'Aprovado').length;
+    const rate = relatedTests.length ? Math.round(approved/relatedTests.length*100) : 0;
+    showDetail(`Produto: ${p.pn}`, `
+        <div class="detail-item"><div class="detail-label">Descrição</div><div class="detail-value">${p.description}</div></div>
+        <div class="detail-item"><div class="detail-label">Tipo de Ensaio</div><div class="detail-value">${p.testType}</div></div>
+        <div class="detail-item"><div class="detail-label">Especificação</div><div class="detail-value">${p.spec} ${p.unit}</div></div>
+        <div class="detail-item"><div class="detail-label">Estatísticas</div><div class="detail-value">📊 ${relatedTests.length} ensaios | ✅ ${approved} aprovados (${rate}%) | ❌ ${relatedTests.length-approved} reprovados</div></div>
+    `, '📦');
+}
+
 function renderTests() {
-    const q  = (document.getElementById('testSearch')?.value||'').toLowerCase();
-    const f  = tests.filter(t => {
-        const p = products.find(p => p.id === t.productId);
+    const q = (document.getElementById('testSearch')?.value||'').toLowerCase();
+    const f = tests.filter(t => { const p = products.find(p => p.id === t.productId);
         return p && (p.pn.toLowerCase().includes(q) || (t.requester||'').toLowerCase().includes(q) || t.executor.toLowerCase().includes(q));
     }).sort((a,b) => new Date(b.date) - new Date(a.date));
     const tb = document.getElementById('testsTableBody');
     if (!tb) return;
-    tb.innerHTML = f.length ? f.map(t => {
-        const p = products.find(p => p.id === t.productId);
-        return `<tr>
-            <td>${t.date}</td>
-            <td class="mono">${p?.pn||'—'}</td>
-            <td>${p?.testType||'—'}</td>
-            <td class="mono">${p?.spec||'—'} ${p?.unit||''}</td>
-            <td>${t.requester||'—'}</td>
-            <td>${t.executor}</td>
-            <td>${t.startTime}</td>
-            <td>${t.endTime}</td>
-            <td class="mono">${t.result} ${p?.unit||''}</td>
-            <td><span class="badge ${t.status==='Aprovado'?'badge-success':'badge-danger'}">${t.status}</span></td>
-            <td><div class="table-actions"><button class="action-btn" onclick="editTest('${t.id}')">✏️</button><button class="action-btn del" onclick="deleteTest('${t.id}')">🗑️</button></div></td>
-        </tr>`;
-    }).join('')
-    : '<tr><td colspan="11"><div class="empty-state"><p>Nenhum ensaio encontrado</p></div><tr></tr>';
+    tb.innerHTML = f.length ? f.map(t => { const p = products.find(p => p.id === t.productId);
+        return `<tr onclick="showTestDetail('${t.id}')" style="cursor:pointer">\n            <td>${t.date}</td>\n            <td class="mono">${p?.pn||'—'}</td>\n            <td>${p?.testType||'—'}</td>\n            <td class="mono">${p?.spec||'—'} ${p?.unit||''}</td>\n            <td>${t.requester||'—'}</td>\n            <td>${t.executor}</td>\n            <td>${t.startTime}</td>\n            <td>${t.endTime}</td>\n            <td class="mono">${t.result} ${p?.unit||''}</td>\n            <td><span class="badge ${t.status==='Aprovado'?'badge-success':'badge-danger'}">${t.status}</span></td>\n            <td><div class="table-actions" onclick="event.stopPropagation()"><button class="action-btn" onclick="editTest('${t.id}')">✏️</button><button class="action-btn del" onclick="deleteTest('${t.id}')">🗑️</button></div></td>\n        </tr>`;
+    }).join('') : '<tr><td colspan="11"><div class="empty-state"><p>Nenhum ensaio encontrado</p></div></td></tr>';
 }
 
-// ────────────────────────────────────────────────────────────
-// PRODUCT CRUD
-// ────────────────────────────────────────────────────────────
-function openProductModal(id = null) {
-    const form = document.getElementById('productForm');
-    if (form) form.reset();
-    const idField = document.getElementById('productId');
-    if (idField) idField.value = '';
-    const title = document.getElementById('productModalTitle');
-    if (title) title.textContent = 'Novo Produto';
-    if (id) {
-        const p = products.find(p => p.id === id);
-        if (p) {
-            if (title) title.textContent = 'Editar Produto';
-            if (idField) idField.value = p.id;
-            const pn = document.getElementById('productPn');
-            const desc = document.getElementById('productDescription');
-            const type = document.getElementById('productTestType');
-            const unit = document.getElementById('productUnit');
-            const spec = document.getElementById('productSpec');
-            if (pn) pn.value = p.pn;
-            if (desc) desc.value = p.description;
-            if (type) type.value = p.testType;
-            if (unit) unit.value = p.unit || '';
-            if (spec) spec.value = p.spec;
-        }
-    }
-    const modal = document.getElementById('productModal');
-    if (modal) modal.classList.add('open');
-}
-
+function openProductModal(id = null) { const form = document.getElementById('productForm'); if (form) form.reset();
+    document.getElementById('productId').value = ''; document.getElementById('productModalTitle').textContent = 'Novo Produto';
+    if (id) { const p = products.find(p => p.id === id); if (p) {
+        document.getElementById('productModalTitle').textContent = 'Editar Produto'; document.getElementById('productId').value = p.id;
+        document.getElementById('productPn').value = p.pn; document.getElementById('productDescription').value = p.description;
+        document.getElementById('productTestType').value = p.testType; document.getElementById('productUnit').value = p.unit || '';
+        document.getElementById('productSpec').value = p.spec; } }
+    document.getElementById('productModal').classList.add('open'); }
 function editProduct(id) { openProductModal(id); }
-function closeModal(id) { const el = document.getElementById(id); if (el) el.classList.remove('open'); }
 
-async function saveProduct(e) {
-    e.preventDefault();
+async function saveProduct(e) { e.preventDefault();
     const { db, doc, setDoc, serverTimestamp } = _fb;
     const id = document.getElementById('productId')?.value || '';
     const docId = id || ('prod-' + Date.now());
-    const data = {
-        pn: document.getElementById('productPn')?.value || '',
-        description: document.getElementById('productDescription')?.value || '',
-        testType: document.getElementById('productTestType')?.value || '',
-        unit: document.getElementById('productUnit')?.value || '',
-        spec: document.getElementById('productSpec')?.value || '',
-        updatedAt: serverTimestamp(),
-    };
+    const data = { pn: document.getElementById('productPn')?.value || '', description: document.getElementById('productDescription')?.value || '',
+        testType: document.getElementById('productTestType')?.value || '', unit: document.getElementById('productUnit')?.value || '',
+        spec: document.getElementById('productSpec')?.value || '', updatedAt: serverTimestamp(), };
     if (!id) data.createdAt = serverTimestamp();
+    try { await setDoc(doc(db, 'products', docId), data, { merge: true }); closeModal('productModal'); toast(id ? 'Produto atualizado!' : 'Produto criado!');
+        if (id) await recalcStatusFirestore(id); } catch(err) { toast('Erro ao salvar: ' + err.message, 'error'); } }
 
-    try {
-        await setDoc(doc(db, 'products', docId), data, { merge: true });
-        closeModal('productModal');
-        toast(id ? 'Produto atualizado!' : 'Produto criado!');
-        if (id) await recalcStatusFirestore(id);
-    } catch(err) {
-        toast('Erro ao salvar: ' + err.message, 'error');
-    }
-}
-
-async function recalcStatusFirestore(productId) {
-    const { db, doc, setDoc } = _fb;
-    const p = products.find(p => p.id === productId);
-    if (!p) return;
+async function recalcStatusFirestore(productId) { const { db, doc, setDoc } = _fb;
+    const p = products.find(p => p.id === productId); if (!p) return;
     const related = tests.filter(t => t.productId === productId);
-    for (const t of related) {
-        const newStatus = checkApproval(p, t.result) ? 'Aprovado' : 'Reprovado';
-        if (newStatus !== t.status) {
-            await setDoc(doc(db, 'tests', t.id), { status: newStatus }, { merge: true });
-        }
-    }
-}
+    for (const t of related) { const newStatus = checkApproval(p, t.result) ? 'Aprovado' : 'Reprovado';
+        if (newStatus !== t.status) await setDoc(doc(db, 'tests', t.id), { status: newStatus }, { merge: true }); } }
 
-async function deleteProduct(id) {
-    if (!confirm('Excluir produto? Os ensaios associados também serão excluídos.')) return;
+async function deleteProduct(id) { if (!confirm('Excluir produto? Os ensaios associados também serão excluídos.')) return;
     const { db, doc, deleteDoc } = _fb;
-    try {
-        const related = tests.filter(t => t.productId === id);
-        for (const t of related) await deleteDoc(doc(db, 'tests', t.id));
-        await deleteDoc(doc(db, 'products', id));
-        toast('Produto excluído!');
-    } catch(err) {
-        toast('Erro ao excluir: ' + err.message, 'error');
-    }
-}
+    try { const related = tests.filter(t => t.productId === id); for (const t of related) await deleteDoc(doc(db, 'tests', t.id));
+        await deleteDoc(doc(db, 'products', id)); toast('Produto excluído!'); } catch(err) { toast('Erro ao excluir: ' + err.message, 'error'); } }
 
-// ────────────────────────────────────────────────────────────
-// TEST CRUD
-// ────────────────────────────────────────────────────────────
-function openTestModal(id = null) {
-    const form = document.getElementById('testForm');
-    if (form) form.reset();
-    const specInfo = document.getElementById('testSpecInfo');
-    if (specInfo) specInfo.textContent = '';
-    const title = document.getElementById('testModalTitle');
-    if (title) title.textContent = 'Novo Ensaio';
-
-    const sel = document.getElementById('testProduct');
-    if (sel) {
-        while (sel.options.length > 1) sel.remove(1);
-        products.forEach(p => sel.add(new Option(p.pn + ' — ' + p.description + ' (' + p.unit + ')', p.id)));
-    }
-
-    if (id) {
-        const t = tests.find(t => t.id === id);
-        if (t) {
-            if (title) title.textContent = 'Editar Ensaio';
-            const idField = document.getElementById('testId');
-            const prodSel = document.getElementById('testProduct');
-            const dateField = document.getElementById('testDate');
-            const requester = document.getElementById('testRequester');
-            const executor = document.getElementById('testExecutor');
-            const result = document.getElementById('testResult');
-            const start = document.getElementById('testStartTime');
-            const end = document.getElementById('testEndTime');
-            const notes = document.getElementById('testNotes');
-            if (idField) idField.value = t.id;
-            if (prodSel) prodSel.value = t.productId;
-            if (dateField) dateField.value = t.date;
-            if (requester) requester.value = t.requester || '';
-            if (executor) executor.value = t.executor;
-            if (result) result.value = t.result;
-            if (start) start.value = t.startTime;
-            if (end) end.value = t.endTime;
-            if (notes) notes.value = t.notes || '';
-            updateTestSpecInfo();
-        }
-    } else {
-        const dateField = document.getElementById('testDate');
-        if (dateField) dateField.value = new Date().toISOString().split('T')[0];
-    }
-    const modal = document.getElementById('testModal');
-    if (modal) modal.classList.add('open');
-}
-
+function openTestModal(id = null) { const form = document.getElementById('testForm'); if (form) form.reset();
+    const specInfo = document.getElementById('testSpecInfo'); if (specInfo) specInfo.textContent = '';
+    document.getElementById('testModalTitle').textContent = 'Novo Ensaio'; document.getElementById('testId').value = '';
+    const sel = document.getElementById('testProduct'); if (sel) { while (sel.options.length > 1) sel.remove(1);
+        products.forEach(p => sel.add(new Option(p.pn + ' — ' + p.description + ' (' + p.unit + ')', p.id))); }
+    if (id) { const t = tests.find(t => t.id === id); if (t) {
+        document.getElementById('testModalTitle').textContent = 'Editar Ensaio'; document.getElementById('testId').value = t.id;
+        document.getElementById('testProduct').value = t.productId; document.getElementById('testDate').value = t.date;
+        document.getElementById('testRequester').value = t.requester || ''; document.getElementById('testExecutor').value = t.executor;
+        document.getElementById('testResult').value = t.result; document.getElementById('testStartTime').value = t.startTime;
+        document.getElementById('testEndTime').value = t.endTime; document.getElementById('testNotes').value = t.notes || '';
+        updateTestSpecInfo(); } }
+    else { const dateField = document.getElementById('testDate'); if (dateField) dateField.value = new Date().toISOString().split('T')[0]; }
+    document.getElementById('testModal').classList.add('open'); }
 function editTest(id) { openTestModal(id); }
+function updateTestSpecInfo() { const pid = document.getElementById('testProduct')?.value; const p = products.find(p => p.id === pid);
+    const info = document.getElementById('testSpecInfo'); if (info) info.textContent = p ? `Especificação: ${p.spec} ${p.unit}` : ''; }
 
-function updateTestSpecInfo() {
-    const pid = document.getElementById('testProduct')?.value;
-    const p = products.find(p => p.id === pid);
-    const info = document.getElementById('testSpecInfo');
-    if (info) info.textContent = p ? `Especificação: ${p.spec} ${p.unit}` : '';
-}
-
-async function saveTest(e) {
-    e.preventDefault();
+async function saveTest(e) { e.preventDefault();
     const { db, doc, setDoc, serverTimestamp } = _fb;
-    const id = document.getElementById('testId')?.value || '';
-    const productId = document.getElementById('testProduct')?.value || '';
-    const result = parseFloat(document.getElementById('testResult')?.value || 0);
-    const p = products.find(p => p.id === productId);
+    const id = document.getElementById('testId')?.value || ''; const productId = document.getElementById('testProduct')?.value || '';
+    const result = parseFloat(document.getElementById('testResult')?.value || 0); const p = products.find(p => p.id === productId);
     if (!p) { toast('Produto não encontrado!', 'error'); return; }
-
     const docId = id || ('test-' + Date.now());
-    const data = {
-        productId,
-        date: document.getElementById('testDate')?.value || '',
-        requester: document.getElementById('testRequester')?.value || '',
-        executor: document.getElementById('testExecutor')?.value || '',
-        result: result.toFixed(2),
-        status: checkApproval(p, result) ? 'Aprovado' : 'Reprovado',
-        startTime: document.getElementById('testStartTime')?.value || '',
-        endTime: document.getElementById('testEndTime')?.value || '',
-        notes: document.getElementById('testNotes')?.value || '',
-        updatedAt: serverTimestamp(),
-    };
+    const data = { productId, date: document.getElementById('testDate')?.value || '', requester: document.getElementById('testRequester')?.value || '',
+        executor: document.getElementById('testExecutor')?.value || '', result: result.toFixed(2), status: checkApproval(p, result) ? 'Aprovado' : 'Reprovado',
+        startTime: document.getElementById('testStartTime')?.value || '', endTime: document.getElementById('testEndTime')?.value || '',
+        notes: document.getElementById('testNotes')?.value || '', updatedAt: serverTimestamp(), };
     if (!id) data.createdAt = serverTimestamp();
+    try { await setDoc(doc(db, 'tests', docId), data, { merge: true }); closeModal('testModal'); toast(id ? 'Ensaio atualizado!' : 'Ensaio registrado!'); }
+    catch(err) { toast('Erro ao salvar: ' + err.message, 'error'); } }
 
-    try {
-        await setDoc(doc(db, 'tests', docId), data, { merge: true });
-        closeModal('testModal');
-        toast(id ? 'Ensaio atualizado!' : 'Ensaio registrado!');
-    } catch(err) {
-        toast('Erro ao salvar: ' + err.message, 'error');
-    }
-}
+async function deleteTest(id) { if (!confirm('Excluir este ensaio?')) return;
+    const { db, doc, deleteDoc } = _fb; try { await deleteDoc(doc(db, 'tests', id)); toast('Ensaio excluído!'); } catch(err) { toast('Erro ao excluir: ' + err.message, 'error'); } }
 
-async function deleteTest(id) {
-    if (!confirm('Excluir este ensaio?')) return;
-    const { db, doc, deleteDoc } = _fb;
-    try {
-        await deleteDoc(doc(db, 'tests', id));
-        toast('Ensaio excluído!');
-    } catch(err) {
-        toast('Erro ao excluir: ' + err.message, 'error');
-    }
-}
+function checkApproval(product, result) { if (!product?.spec) return false;
+    const spec = product.spec.trim(); const m = spec.match(/(\d+(?:\.\d+)?)/); if (!m) return false;
+    const val = parseFloat(m[1]); const res = parseFloat(result);
+    if (spec.includes('≥')) return res >= val; if (spec.includes('≤')) return res <= val; return res >= val; }
 
-// ────────────────────────────────────────────────────────────
-// HELPERS
-// ────────────────────────────────────────────────────────────
-function checkApproval(product, result) {
-    if (!product?.spec) return false;
-    const spec = product.spec.trim();
-    const m = spec.match(/(\d+(?:\.\d+)?)/);
-    if (!m) return false;
-    const val = parseFloat(m[1]);
-    const res = parseFloat(result);
-    if (spec.includes('≥')) return res >= val;
-    if (spec.includes('≤')) return res <= val;
-    return res >= val;
-}
-
-// ────────────────────────────────────────────────────────────
-// PRINT MODAL
-// ────────────────────────────────────────────────────────────
-function openPrintModal() {
-    const modal = document.getElementById('printModal');
-    if (modal) modal.classList.add('open');
-}
-
-function closePrintModal() {
-    const modal = document.getElementById('printModal');
-    if (modal) modal.classList.remove('open');
-}
-
-function togglePrintCheck(input, labelId) {
-    const label = document.getElementById(labelId);
-    if (label) label.classList.toggle('selected', input.checked);
-}
-
-function getPrintChecks() {
-    const vals = new Set();
-    document.querySelectorAll('#printModal input[type=checkbox]:checked').forEach(cb => vals.add(cb.value));
-    return vals;
-}
-
-function executePrint() {
-    const checked = getPrintChecks();
-    const f = getFilteredTests();
-    const periodVal = document.getElementById('periodFilter')?.value || '30';
+function openPrintModal() { document.getElementById('printModal').classList.add('open'); }
+function closePrintModal() { document.getElementById('printModal').classList.remove('open'); }
+function togglePrintCheck(input, labelId) { const label = document.getElementById(labelId); if (label) label.classList.toggle('selected', input.checked); }
+function getPrintChecks() { const vals = new Set(); document.querySelectorAll('#printModal input[type=checkbox]:checked').forEach(cb => vals.add(cb.value)); return vals; }
+function executePrint() { const checked = getPrintChecks(); const f = getFilteredTests(); const periodVal = document.getElementById('periodFilter')?.value || '30';
     const periodLabels = { '7':'Últimos 7 dias','14':'Últimos 14 dias','30':'Últimos 30 dias','90':'Últimos 90 dias',all:'Todo período' };
-    const periodLabel = periodLabels[periodVal] || periodVal;
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('pt-BR', {day:'2-digit',month:'long',year:'numeric'});
-    const timeStr = now.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
-
-    const total = f.length;
-    const approved = f.filter(t => t.status === 'Aprovado').length;
-    const rejected = total - approved;
-    const rate = total ? (approved/total*100).toFixed(1) : '0.0';
-
-    const byProduct = new Map();
-    f.forEach(t => {
-        const p = products.find(p => p.id === t.productId); if (!p) return;
-        if (!byProduct.has(p.pn)) byProduct.set(p.pn, {desc:p.description,a:0,r:0});
-        const d = byProduct.get(p.pn);
-        t.status === 'Aprovado' ? d.a++ : d.r++;
-    });
-
-    const byType = new Map();
-    f.forEach(t => { const p = products.find(p => p.id === t.productId); if (!p) return; byType.set(p.testType,(byType.get(p.testType)||0)+1); });
-
-    const css = `
-        *{margin:0;padding:0;box-sizing:border-box;}
-        body{font-family:'Segoe UI',Arial,sans-serif;color:#1a2540;background:#fff;font-size:11px;line-height:1.5;}
-        .page{max-width:860px;margin:0 auto;padding:28px 32px;}
-        h1{font-size:22px;font-weight:700;color:#0f2040;}
-        h2{font-size:13px;font-weight:700;color:#0f2040;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #e2e8f0;}
-        .meta{font-size:10px;color:#8096b8;margin-top:2px;}
-        .header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:18px;margin-bottom:18px;border-bottom:3px solid #0f2040;}
-        .logo{font-size:24px;font-weight:800;color:#0f2040;} .logo span{color:#2563eb;}
-        .section{margin-bottom:22px;}
-        .kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:20px;}
-        .kpi{border:1px solid #e2e8f0;border-radius:8px;padding:12px 10px;text-align:center;}
+    const periodLabel = periodLabels[periodVal] || periodVal; const now = new Date(); const dateStr = now.toLocaleDateString('pt-BR', {day:'2-digit',month:'long',year:'numeric'});
+    const timeStr = now.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}); const total = f.length; const approved = f.filter(t => t.status === 'Aprovado').length;
+    const rejected = total - approved; const rate = total ? (approved/total*100).toFixed(1) : '0.0'; const byProduct = new Map();
+    f.forEach(t => { const p = products.find(p => p.id === t.productId); if (!p) return; if (!byProduct.has(p.pn)) byProduct.set(p.pn, {desc:p.description,a:0,r:0});
+        const d = byProduct.get(p.pn); t.status === 'Aprovado' ? d.a++ : d.r++; });
+    const byType = new Map(); f.forEach(t => { const p = products.find(p => p.id === t.productId); if (!p) return; byType.set(p.testType,(byType.get(p.testType)||0)+1); });
+    const css = `*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Segoe UI',Arial,sans-serif;color:#1a2540;background:#fff;font-size:11px;line-height:1.5;}
+        .page{max-width:860px;margin:0 auto;padding:28px 32px;}h1{font-size:22px;font-weight:700;color:#0f2040;}h2{font-size:13px;font-weight:700;color:#0f2040;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #e2e8f0;}
+        .meta{font-size:10px;color:#8096b8;margin-top:2px;}.header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:18px;margin-bottom:18px;border-bottom:3px solid #0f2040;}
+        .logo{font-size:24px;font-weight:800;color:#0f2040;} .logo span{color:#2563eb;}.section{margin-bottom:22px;}
+        .kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:20px;}.kpi{border:1px solid #e2e8f0;border-radius:8px;padding:12px 10px;text-align:center;}
         .kpi-val{font-size:20px;font-weight:700;color:#0f2040;} .kpi-lbl{font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#8096b8;margin-top:2px;}
         .kpi.success .kpi-val{color:#0ea573;} .kpi.danger .kpi-val{color:#e53e55;} .kpi.accent .kpi-val{color:#7c3aed;}
-        table{width:100%;border-collapse:collapse;font-size:10px;margin-top:8px;}
-        th{background:#f4f6fb;color:#4a5f80;text-transform:uppercase;letter-spacing:0.06em;font-size:9px;padding:7px 8px;text-align:left;border-bottom:2px solid #dde4f0;}
-        td{padding:6px 8px;border-bottom:1px solid #f0f4fb;color:#2a3a5a;}
-        .badge{display:inline-block;padding:1px 7px;border-radius:4px;font-weight:600;font-size:9px;}
-        .badge-ok{background:#d1fae5;color:#059669;} .badge-err{background:#fee2e2;color:#dc2626;}
-        .approval-big{font-size:40px;font-weight:800;color:#0ea573;} .approval-sub{font-size:10px;color:#8096b8;}
+        table{width:100%;border-collapse:collapse;font-size:10px;margin-top:8px;}th{background:#f4f6fb;color:#4a5f80;text-transform:uppercase;letter-spacing:0.06em;font-size:9px;padding:7px 8px;text-align:left;border-bottom:2px solid #dde4f0;}
+        td{padding:6px 8px;border-bottom:1px solid #f0f4fb;color:#2a3a5a;}.badge{display:inline-block;padding:1px 7px;border-radius:4px;font-weight:600;font-size:9px;}
+        .badge-ok{background:#d1fae5;color:#059669;} .badge-err{background:#fee2e2;color:#dc2626;}.approval-big{font-size:40px;font-weight:800;color:#0ea573;}
         .footer{margin-top:28px;padding-top:14px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;font-size:9px;color:#aabbd0;}
         @media print{.page{padding:16px;}}`;
-
     let html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Relatório QA — Rochling</title><style>${css}</style></head><body><div class="page">`;
     html += `<div class="header"><div><div class="logo">Rochling <span>Automotive</span></div><div class="meta">Relatório de Qualidade — Gestão de Ensaios</div><div class="meta">Período: ${periodLabel} | Gerado em ${dateStr} às ${timeStr}</div></div><div style="text-align:right;"><div style="font-size:11px;color:#8096b8;">Rochling Automotive</div><div style="font-size:10px;color:#aabbd0;">Sistema QA · Ensaios</div></div></div>`;
-
     if (checked.has('kpi')) html += `<div class="section"><h2>Indicadores de Performance (KPI)</h2><div class="kpi-row"><div class="kpi"><div class="kpi-val">${total}</div><div class="kpi-lbl">Total Ensaios</div></div><div class="kpi success"><div class="kpi-val">${approved}</div><div class="kpi-lbl">Aprovados</div></div><div class="kpi danger"><div class="kpi-val">${rejected}</div><div class="kpi-lbl">Reprovados</div></div><div class="kpi accent"><div class="kpi-val">${rate}%</div><div class="kpi-lbl">Taxa Aprovação</div></div><div class="kpi"><div class="kpi-val">${new Set(f.map(t=>t.executor)).size}</div><div class="kpi-lbl">Executantes</div></div><div class="kpi"><div class="kpi-val">${products.length}</div><div class="kpi-lbl">Produtos</div></div></div></div>`;
-
     if (checked.has('approval')) html += `<div class="section"><h2>Taxa de Aprovação Global</h2><div style="border:1px solid #e2e8f0;border-radius:8px;padding:14px;display:flex;align-items:center;gap:28px;"><div><div class="approval-big">${rate}%</div><div class="approval-sub">de aprovação no período</div></div><div style="flex:1;"><div style="height:16px;background:#f0f4fb;border-radius:99px;overflow:hidden;"><div style="height:100%;width:${rate}%;background:#0ea573;border-radius:99px;"></div></div><div style="display:flex;justify-content:space-between;margin-top:6px;font-size:9px;color:#8096b8;"><span>✓ ${approved} Aprovados</span><span>✕ ${rejected} Reprovados</span></div></div></div></div>`;
-
-    if (checked.has('rejected')) {
-        const rejList = [...byProduct.entries()].filter(([,d]) => d.r > 0).sort((a,b) => b[1].r - a[1].r);
-        html += `<div class="section"><h2>⚠️ Produtos com Mais Reprovações</h2><tr><thead><tr><th>PN</th><th>Descrição</th><th>Aprovados</th><th>Reprovados</th><th>Total</th><th>Taxa Falha</th></tr></thead><tbody>${rejList.map(([pn,d])=>`<tr><td><b>${pn}</b></td><td>${d.desc}</td><td style="color:#0ea573;">${d.a}</td><td style="color:#dc2626;">${d.r}</<td style="color:#dc2626;">${d.r}</td><td>${d.a+d.r}</td><td><span class="badge badge-err">${Math.round(d.r/(d.a+d.r)*100)}%</span></td></tr>`).join('')}</tbody></table></div>`;
-    }
-
-    if (checked.has('byProduct')) {
-        const sorted = [...byProduct.entries()].sort((a,b) => (b[1].a+b[1].r)-(a[1].a+a[1].r));
-        html += `<div class="section"><h2>Resumo por Produto (PN)</h2><table><thead><tr><th>PN</th><th>Descrição</th><th>Aprovados</th><th>Reprovados</th><th>Total</th><th>% Aprovação</th></tr></thead><tbody>${sorted.map(([pn,d])=>`<tr><td><b>${pn}</b></td><td>${d.desc}</td><td>${d.a}</td><td>${d.r}</td><td>${d.a+d.r}</td><td><span class="badge ${d.r===0?'badge-ok':'badge-err'}">${Math.round(d.a/(d.a+d.r)*100)}%</span></td></tr>`).join('')}</tbody></table></div>`;
-    }
-
+    if (checked.has('rejected')) { const rejList = [...byProduct.entries()].filter(([,d]) => d.r > 0).sort((a,b) => b[1].r - a[1].r);
+        html += `<div class="section"><h2>⚠️ Produtos com Mais Reprovações</h2><table><thead><tr><th>PN</th><th>Descrição</th><th>Aprovados</th><th>Reprovados</th><th>Total</th><th>Taxa Falha</th></tr></thead><tbody>${rejList.map(([pn,d])=>`<tr><td><b>${pn}</b></td><td>${d.desc}</td><td style="color:#0ea573;">${d.a}</td><td style="color:#dc2626;">${d.r}</td><td>${d.a+d.r}</td><td><span class="badge badge-err">${Math.round(d.r/(d.a+d.r)*100)}%</span></td></tr>`).join('')}</tbody></table></div>`; }
+    if (checked.has('byProduct')) { const sorted = [...byProduct.entries()].sort((a,b) => (b[1].a+b[1].r)-(a[1].a+a[1].r));
+        html += `<div class="section"><h2>Resumo por Produto (PN)</h2><table><thead><tr><th>PN</th><th>Descrição</th><th>Aprovados</th><th>Reprovados</th><th>Total</th><th>% Aprovação</th></tr></thead><tbody>${sorted.map(([pn,d])=>`<tr><td><b>${pn}</b></td><td>${d.desc}</td><td>${d.a}</td><td>${d.r}</td><td>${d.a+d.r}</td><td><span class="badge ${d.r===0?'badge-ok':'badge-err'}">${Math.round(d.a/(d.a+d.r)*100)}%</span></td></tr>`).join('')}</tbody></table></div>`; }
     if (checked.has('byType')) html += `<div class="section"><h2>Resumo por Tipo de Ensaio</h2><table><thead><tr><th>Tipo de Ensaio</th><th>Quantidade</th><th>% do Total</th></tr></thead><tbody>${[...byType.entries()].sort((a,b)=>b[1]-a[1]).map(([type,count])=>`<tr><td><b>${type}</b></td><td>${count}</td><td>${total?Math.round(count/total*100):0}%</td></tr>`).join('')}</tbody></table></div>`;
-
-    if (checked.has('allTests')) {
-        const sorted = [...f].sort((a,b) => new Date(b.date) - new Date(a.date));
-        html += `<div class="section" style="page-break-before:always;"><h2>Tabela Completa de Ensaios (${sorted.length} registros)</h2><table><thead><tr><th>Data</th><th>PN</th><th>Tipo</th><th>Especificação</th><th>Solicitante</th><th>Executante</th><th>Início</th><th>Fim</th><th>Resultado</th><th>Status</th></tr></thead><tbody>${sorted.map(t=>{ const p=products.find(p=>p.id===t.productId); return `<tr><td>${t.date}</td><td><b>${p?.pn||'—'}</b></td><td>${p?.testType||'—'}</td><td>${p?.spec||'—'} ${p?.unit||''}</td><td>${t.requester||'—'}</td><td>${t.executor}</td><td>${t.startTime}</td><td>${t.endTime}</td><td><b>${t.result} ${p?.unit||''}</b></td><td><span class="badge ${t.status==='Aprovado'?'badge-ok':'badge-err'}">${t.status}</span></td></tr>`; }).join('')}</tbody></table></div>`;
-    }
-
+    if (checked.has('allTests')) { const sorted = [...f].sort((a,b) => new Date(b.date) - new Date(a.date));
+        html += `<div class="section" style="page-break-before:always;"><h2>Tabela Completa de Ensaios (${sorted.length} registros)</h2><table><thead><tr><th>Data</th><th>PN</th><th>Tipo</th><th>Especificação</th><th>Solicitante</th><th>Executante</th><th>Início</th><th>Fim</th><th>Resultado</th><th>Status</th></tr></thead><tbody>${sorted.map(t=>{ const p=products.find(p=>p.id===t.productId); return `<tr><td>${t.date}</td><td><b>${p?.pn||'—'}</b></td><td>${p?.testType||'—'}</td><td>${p?.spec||'—'} ${p?.unit||''}</td><td>${t.requester||'—'}</td><td>${t.executor}</td><td>${t.startTime}</td><td>${t.endTime}</td><td><b>${t.result} ${p?.unit||''}</b></td><td><span class="badge ${t.status==='Aprovado'?'badge-ok':'badge-err'}">${t.status}</span></td></tr>`; }).join('')}</tbody></table></div>`; }
     html += `<div class="footer"><span>Rochling Automotive — Sistema de Gestão de Ensaios QA</span><span>Emitido em ${dateStr} | ${timeStr}</span></div></div></body></html>`;
+    const w = window.open('', '_blank', 'width=1000,height=800'); if (w) { w.document.write(html); w.document.close(); w.focus(); setTimeout(() => w.print(), 600); }
+    closePrintModal(); toast('Relatório gerado!'); }
 
-    const w = window.open('', '_blank', 'width=1000,height=800');
-    if (w) {
-        w.document.write(html);
-        w.document.close();
-        w.focus();
-        setTimeout(() => w.print(), 600);
-    }
-    closePrintModal();
-    toast('Relatório gerado!');
-}
+function exportCSV() { const f = getFilteredTests(); let csv = 'Data,PN,Tipo,Especificação,Solicitante,Executante,Início,Fim,Resultado,Unidade,Status\n';
+    f.forEach(t => { const p = products.find(p => p.id === t.productId); csv += `${t.date},${p?.pn||''},${p?.testType||''},${p?.spec||''},${t.requester||''},${t.executor},${t.startTime},${t.endTime},${t.result},${p?.unit||''},${t.status}\n`; });
+    const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' }); const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = 'ensaios_' + new Date().toISOString().split('T')[0] + '.csv'; a.click(); toast('CSV exportado!'); }
 
-// ────────────────────────────────────────────────────────────
-// CSV EXPORT
-// ────────────────────────────────────────────────────────────
-function exportCSV() {
-    const f = getFilteredTests();
-    let csv = 'Data,PN,Tipo,Especificação,Solicitante,Executante,Início,Fim,Resultado,Unidade,Status\n';
-    f.forEach(t => {
-        const p = products.find(p => p.id === t.productId);
-        csv += `${t.date},${p?.pn||''},${p?.testType||''},${p?.spec||''},${t.requester||''},${t.executor},${t.startTime},${t.endTime},${t.result},${p?.unit||''},${t.status}\n`;
-    });
-    const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'ensaios_' + new Date().toISOString().split('T')[0] + '.csv';
-    a.click();
-    toast('CSV exportado!');
-}
+function toast(msg, type='success') { const area = document.getElementById('toastArea'); if (!area) return;
+    const el = document.createElement('div'); el.className = 'toast toast-' + type; el.innerHTML = `<span>${type==='success'?'✓':'✕'}</span><span>${msg}</span>`;
+    area.appendChild(el); setTimeout(() => { el.style.opacity='0'; el.style.transform='translateX(60px)'; setTimeout(()=>el.remove(),220); }, 3500); }
 
-// ────────────────────────────────────────────────────────────
-// TOAST
-// ────────────────────────────────────────────────────────────
-function toast(msg, type='success') {
-    const area = document.getElementById('toastArea');
-    if (!area) return;
-    const el = document.createElement('div');
-    el.className = 'toast toast-' + type;
-    el.innerHTML = `<span>${type==='success'?'✓':'✕'}</span><span>${msg}</span>`;
-    area.appendChild(el);
-    setTimeout(() => { el.style.opacity='0'; el.style.transform='translateX(60px)'; setTimeout(()=>el.remove(),220); }, 3500);
-}
-
-// Close modals on outside click
-document.querySelectorAll('.modal-bg, .print-modal-bg').forEach(m => {
-    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
-});
+document.querySelectorAll('.modal-bg, .print-modal-bg').forEach(m => { m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); }); });
 </script>
 </body>
 </html>
